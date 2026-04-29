@@ -253,13 +253,19 @@ tr:hover td{background:rgba(37,99,235,.04)}
         <input type="hidden" id="inp-dichvu" value="">
       </div>
 
-      <!-- HÀNG 1: MST + SĐT + Ngày -->
-      <div style="display:grid;grid-template-columns:1fr 1fr 160px;gap:10px;margin-bottom:10px">
-        <div class="form-group">
-          <label>MST <span style="color:var(--text-dim);font-weight:400;text-transform:none;font-size:10px">— nhập để tự điền</span></label>
-          <input type="text" id="inp-mst" placeholder="0401234567" tabindex="5"
-            oninput="onMstInput(this)" onkeydown="fieldEnter(event,'inp-sdt')" autocomplete="off">
-          <div id="mst-suggest" style="display:none;position:absolute;z-index:300;background:var(--surface2);border:1px solid var(--accent);border-radius:6px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.5);min-width:320px"></div>
+      <!-- HÀNG 1: MST + SĐT + Ngày giờ -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 190px;gap:10px;margin-bottom:10px">
+        <div class="form-group" style="position:relative">
+          <label>MST <span style="color:var(--text-dim);font-weight:400;text-transform:none;font-size:10px">— nhập để tra cứu</span></label>
+          <div style="display:flex;gap:6px;align-items:center">
+            <input type="text" id="inp-mst" placeholder="0401234567" tabindex="5"
+              oninput="onMstInput(this)" onkeydown="onMstKeydown(event)" autocomplete="off" style="flex:1">
+            <button type="button" id="btn-tracuu" onclick="traCuuMST()" tabindex="-1"
+              style="padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--accent-light);cursor:pointer;font-size:12px;white-space:nowrap;font-weight:700;transition:all .2s"
+              title="Tra cứu tên đơn vị theo MST từ cơ quan thuế">🔍</button>
+          </div>
+          <div id="mst-suggest" style="display:none;position:absolute;left:0;z-index:300;background:var(--surface2);border:1px solid var(--accent);border-radius:6px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.5);min-width:320px;top:100%"></div>
+          <div id="mst-lookup-status" style="font-size:11px;margin-top:4px;min-height:16px"></div>
         </div>
         <div class="form-group">
           <label>SĐT</label>
@@ -267,8 +273,14 @@ tr:hover td{background:rgba(37,99,235,.04)}
             onkeydown="fieldEnter(event,'inp-donvi')">
         </div>
         <div class="form-group">
-          <label>Ngày</label>
-          <input type="date" id="inp-ngay" tabindex="7">
+          <label>Ngày &amp; Giờ</label>
+          <div id="clock-display" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px 12px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--accent-light);letter-spacing:0.5px;cursor:default;user-select:none;line-height:1.35">
+            <div id="clock-time" style="font-weight:700;font-size:15px"></div>
+            <div id="clock-date" style="font-size:11px;color:var(--text-muted)"></div>
+          </div>
+          <!-- hidden fields vẫn dùng để lưu -->
+          <input type="hidden" id="inp-ngay">
+          <input type="hidden" id="inp-gio">
         </div>
       </div>
 
@@ -351,6 +363,7 @@ tr:hover td{background:rgba(37,99,235,.04)}
       <thead>
         <tr>
           <th style="width:36px">#</th>
+          <th style="white-space:nowrap">Ngày &amp; Giờ</th>
           <th>MST</th>
           <th>SĐT</th>
           <th>Tên đơn vị</th>
@@ -580,11 +593,28 @@ function pickNoidung(e,text){
 // INIT
 // ═══════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded',()=>{
-  const today=new Date().toISOString().split('T')[0];
-  document.getElementById('inp-ngay').value=today;
+  // Khởi đồng hồ realtime
+  function tickClock(){
+    const now=new Date();
+    const hh=String(now.getHours()).padStart(2,'0');
+    const mm=String(now.getMinutes()).padStart(2,'0');
+    const ss=String(now.getSeconds()).padStart(2,'0');
+    const days=['CN','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'];
+    const d=String(now.getDate()).padStart(2,'0');
+    const mo=String(now.getMonth()+1).padStart(2,'0');
+    const yr=now.getFullYear();
+    document.getElementById('clock-time').textContent=`${hh}:${mm}:${ss}`;
+    document.getElementById('clock-date').textContent=`${days[now.getDay()]} ${d}/${mo}/${yr}`;
+    // Cập nhật hidden fields
+    document.getElementById('inp-ngay').value=now.toISOString().split('T')[0];
+    document.getElementById('inp-gio').value=`${hh}:${mm}:${ss}`;
+  }
+  tickClock();
+  setInterval(tickClock,1000);
 
   const mon=getMonday(new Date());
   const sun=new Date(mon);sun.setDate(sun.getDate()+6);
+  const today=new Date().toISOString().split('T')[0];
   document.getElementById('f-from').value=mon.toISOString().split('T')[0];
   document.getElementById('f-to').value=sun.toISOString().split('T')[0];
   document.getElementById('rpt-from').value=mon.toISOString().split('T')[0];
@@ -638,13 +668,13 @@ function selectDV(dv, el){
 // ═══════════════════════════════════════════════
 async function addRecord(){
   const ngay    =document.getElementById('inp-ngay').value;
+  const gio     =document.getElementById('inp-gio').value;
   const dichvu  =document.getElementById('inp-dichvu').value;
   const donvi   =document.getElementById('inp-donvi').value.trim();
   const mst     =document.getElementById('inp-mst').value.trim();
   const sdt     =document.getElementById('inp-sdt').value.trim();
   const noidung =document.getElementById('inp-noidung').value.trim();
 
-  if(!ngay){toast('Vui lòng chọn ngày','error');return;}
   if(!dichvu){toast('Vui lòng chọn loại dịch vụ','error');document.getElementById('dv-pills').querySelector('.dv-pill').focus();return;}
   if(!donvi){toast('Vui lòng nhập tên đơn vị','error');document.getElementById('inp-donvi').focus();return;}
 
@@ -652,7 +682,7 @@ async function addRecord(){
   btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Đang lưu...';
 
   try {
-    await window._fb.addRecord({id:Date.now(),ngay,dichvu,donvi,mst,sdt,noidung,nguoi:'Đông'});
+    await window._fb.addRecord({id:Date.now(),ngay,gio,dichvu,donvi,mst,sdt,noidung,nguoi:'Đông'});
     if(noidung) saveNoidung(noidung);
 
     const fb=document.getElementById('last-saved');
@@ -672,12 +702,12 @@ async function addRecord(){
 }
 
 function clearForm(keepDate=false){
-  if(!keepDate) document.getElementById('inp-ngay').value=new Date().toISOString().split('T')[0];
   document.getElementById('inp-dichvu').value='';
   document.getElementById('inp-donvi').value='';
   document.getElementById('inp-mst').value='';
   document.getElementById('inp-sdt').value='';
   document.getElementById('inp-noidung').value='';
+  document.getElementById('mst-lookup-status').textContent='';
   document.querySelectorAll('.dv-pill').forEach(p=>p.className='dv-pill');
 }
 
@@ -708,13 +738,15 @@ function fieldEnter(e,nextId){
 }
 
 // ═══════════════════════════════════════════════
-// MST AUTOCOMPLETE — tự điền SĐT + Tên đơn vị
+// MST AUTOCOMPLETE + TRA CỨU API THUẾ
 // ═══════════════════════════════════════════════
+let mstSuggestIdx=-1;
+
 function onMstInput(inp){
   const val=inp.value.trim();
   const box=document.getElementById('mst-suggest');
-  if(val.length<3){box.style.display='none';return;}
-  // Tìm các records có MST khớp
+  if(val.length<3){box.style.display='none';mstSuggestIdx=-1;return;}
+  // Tìm các records có MST khớp từ lịch sử local
   const seen=new Map();
   records.forEach(r=>{
     if(r.mst&&r.mst.includes(val)&&!seen.has(r.mst)){
@@ -723,20 +755,98 @@ function onMstInput(inp){
   });
   const matches=[...seen.values()].slice(0,6);
   if(!matches.length){box.style.display='none';return;}
+  mstSuggestIdx=-1;
   box.innerHTML=matches.map((m,i)=>`
-    <div style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--surface3)" 
+    <div data-idx="${i}" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--surface3)"
       onmousedown="fillFromMst('${(m.mst||'').replace(/'/g,"&#39;")}','${(m.sdt||'').replace(/'/g,"&#39;")}','${(m.donvi||'').replace(/'/g,"&#39;")}')"
-      onmouseenter="this.style.background='var(--accent-glow)'" onmouseleave="this.style.background=''">
+      onmouseenter="hlMst(${i})" onmouseleave="hlMst(-1)">
       <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent-light)">${m.mst}</span>
       <span style="color:var(--text-muted);font-size:12px;margin-left:8px">${m.donvi||''}</span>
       ${m.sdt?`<span style="color:var(--text-dim);font-size:11px;margin-left:6px">${m.sdt}</span>`:''}
     </div>`).join('');
   box.style.display='block';
-  // Định vị box theo input
   const rect=inp.getBoundingClientRect();
-  box.style.top=(inp.offsetTop+inp.offsetHeight)+'px';
-  box.style.left=inp.offsetLeft+'px';
   box.style.width=Math.max(320,inp.offsetWidth)+'px';
+}
+
+function hlMst(idx){
+  document.querySelectorAll('#mst-suggest div[data-idx]').forEach((d,i)=>{
+    d.style.background=i===idx?'var(--accent-glow)':'';
+  });
+  mstSuggestIdx=idx;
+}
+
+function onMstKeydown(e){
+  const box=document.getElementById('mst-suggest');
+  if(box.style.display!=='none'){
+    const items=box.querySelectorAll('div[data-idx]');
+    if(e.key==='ArrowDown'){e.preventDefault();mstSuggestIdx=Math.min(mstSuggestIdx+1,items.length-1);hlMst(mstSuggestIdx);return;}
+    if(e.key==='ArrowUp'){e.preventDefault();mstSuggestIdx=Math.max(mstSuggestIdx-1,0);hlMst(mstSuggestIdx);return;}
+    if(e.key==='Enter'&&mstSuggestIdx>=0){e.preventDefault();const sel=items[mstSuggestIdx];if(sel)sel.dispatchEvent(new MouseEvent('mousedown'));return;}
+    if(e.key==='Escape'){box.style.display='none';return;}
+  }
+  if(e.key==='Enter'){e.preventDefault();document.getElementById('inp-sdt').focus();}
+}
+
+async function traCuuMST(){
+  const mst=document.getElementById('inp-mst').value.trim().replace(/\s/g,'');
+  if(!mst){toast('Nhập MST trước khi tra cứu','error');return;}
+  if(!/^\d{10}(\d{3})?$/.test(mst)){toast('MST phải là 10 hoặc 13 chữ số','error');return;}
+
+  const statusEl=document.getElementById('mst-lookup-status');
+  const btn=document.getElementById('btn-tracuu');
+  btn.textContent='⏳';btn.disabled=true;
+  statusEl.style.color='var(--yellow)';statusEl.textContent='Đang tra cứu...';
+
+  // Thử các API proxy CORS-friendly cho MST Việt Nam
+  const apis=[
+    `https://api.vietqr.io/v2/business/${mst}`,
+    `https://mst.vneids.com/api/taxpayer/${mst}`,
+  ];
+
+  let found=false;
+  // API 1: VietQR business lookup
+  try {
+    const r=await fetch(`https://api.vietqr.io/v2/business/${mst}`,{headers:{Accept:'application/json'}});
+    if(r.ok){
+      const j=await r.json();
+      if(j.code==='00'&&j.data&&j.data.name){
+        const name=j.data.name;
+        const addr=j.data.address||'';
+        document.getElementById('inp-donvi').value=name;
+        statusEl.style.color='var(--green)';
+        statusEl.textContent=`✓ ${name}${addr?' · '+addr.slice(0,50):''}`;
+        document.getElementById('mst-suggest').style.display='none';
+        document.getElementById('inp-sdt').focus();
+        toast('✓ Đã điền tên đơn vị từ MST!','success');
+        found=true;
+      }
+    }
+  } catch(e){}
+
+  // API 2: thử api.masothue.com nếu API 1 thất bại  
+  if(!found){
+    try {
+      const r=await fetch(`https://api.masothue.com/v1/doanh-nghiep/${mst}`);
+      if(r.ok){
+        const j=await r.json();
+        const name=j?.data?.ten||j?.ten||'';
+        if(name){
+          document.getElementById('inp-donvi').value=name;
+          statusEl.style.color='var(--green)';statusEl.textContent=`✓ ${name}`;
+          document.getElementById('inp-sdt').focus();
+          toast('✓ Đã điền tên đơn vị!','success');
+          found=true;
+        }
+      }
+    } catch(e){}
+  }
+
+  if(!found){
+    statusEl.style.color='var(--text-muted)';
+    statusEl.innerHTML=`Không tìm thấy · <a href="https://masothue.com/${mst}" target="_blank" style="color:var(--accent-light)">Tra thủ công</a>`;
+  }
+  btn.textContent='🔍';btn.disabled=false;
 }
 
 function fillFromMst(mst,sdt,donvi){
@@ -744,6 +854,7 @@ function fillFromMst(mst,sdt,donvi){
   if(sdt)document.getElementById('inp-sdt').value=sdt;
   if(donvi)document.getElementById('inp-donvi').value=donvi;
   document.getElementById('mst-suggest').style.display='none';
+  document.getElementById('mst-lookup-status').textContent='';
   document.getElementById('inp-noidung').focus();
 }
 
@@ -846,8 +957,19 @@ function renderTable(resetPage=true){
     const noidungSafe=(r.noidung||'').replace(/"/g,'&quot;');
     const dvLabel=DV_LABELS[r.dichvu]||r.dichvu||'';
     const nguoiVal=r.nguoi||'Đông';
+    // Format ngày giờ
+    let ngayHien='—';
+    if(r.ngay){
+      const parts=r.ngay.split('-');
+      ngayHien=`${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+    const gioHien=r.gio?r.gio.slice(0,5):'';
     return `<tr>
       <td style="color:var(--text-dim)">${globalIdx+1}</td>
+      <td class="mono" style="white-space:nowrap">
+        <div style="color:var(--text);font-size:12px">${ngayHien}</div>
+        ${gioHien?`<div style="color:var(--text-muted);font-size:11px">${gioHien}</div>`:''}
+      </td>
       <td class="mono">${r.mst||'—'}</td>
       <td class="mono">${r.sdt||'—'}</td>
       <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${donviSafe}">${r.donvi}</td>
