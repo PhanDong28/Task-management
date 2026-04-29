@@ -10,7 +10,7 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import {
     getFirestore, collection, addDoc, getDocs, deleteDoc,
-    doc, onSnapshot, query, orderBy, serverTimestamp
+    doc, onSnapshot, query, orderBy, serverTimestamp, updateDoc
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -34,6 +34,9 @@
     },
     async deleteRecord(fbId) {
       await deleteDoc(doc(db, "records", fbId));
+    },
+    async updateRecord(fbId, data) {
+      await updateDoc(doc(db, "records", fbId), data);
     },
     listenRecords(callback) {
       const q = query(colRef, orderBy("createdAt", "desc"));
@@ -100,6 +103,7 @@ input[type="date"]{color-scheme:dark}
 .btn-danger{background:var(--red);color:white}.btn-danger:hover{background:#dc2626}
 .btn-ghost{background:var(--surface2);color:var(--text-muted);border:1px solid var(--border)}.btn-ghost:hover{color:var(--text);border-color:var(--accent)}
 .btn-purple{background:var(--purple);color:white}.btn-purple:hover{background:#9333ea}
+.btn-warning{background:var(--orange);color:white}.btn-warning:hover{background:#ea580c}
 .btn-sm{padding:5px 12px;font-size:12px}
 .btn-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 
@@ -178,11 +182,22 @@ tr:hover td{background:rgba(37,99,235,.04)}
 .empty-state{text-align:center;padding:48px;color:var(--text-dim)}
 .empty-state p{font-size:14px}
 
-/* MST lookup status styles */
 .mst-status-loading{color:var(--yellow)}
 .mst-status-ok{color:var(--green)}
 .mst-status-warn{color:var(--orange)}
 .mst-status-error{color:var(--red)}
+
+/* ── EDIT MODAL ── */
+.modal-overlay{position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;width:100%;max-width:660px;box-shadow:0 24px 64px rgba(0,0,0,.6);animation:slideUp .25s ease}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-header{padding:18px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.modal-header h3{font-size:15px;font-weight:800;color:var(--accent-light);flex:1}
+.modal-body{padding:24px}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end}
+.edit-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.edit-form-grid .span2{grid-column:span 2}
 </style>
 </head>
 <body>
@@ -226,17 +241,22 @@ tr:hover td{background:rgba(37,99,235,.04)}
         <input type="hidden" id="inp-dichvu" value="">
       </div>
 
-      <!-- MST + SĐT + Giờ -->
+      <!-- MST/CCCD + SĐT + Giờ -->
       <div style="display:grid;grid-template-columns:1fr 1fr 190px;gap:10px;margin-bottom:10px">
         <div class="form-group" style="position:relative">
-          <label>MST <span style="color:var(--text-dim);font-weight:400;text-transform:none;font-size:10px">— nhập để tra cứu</span></label>
+          <label>
+            MST / CCCD
+            <span style="color:var(--text-dim);font-weight:400;text-transform:none;font-size:10px">— 10/12/13 số</span>
+          </label>
           <div style="display:flex;gap:6px;align-items:center">
-            <input type="text" id="inp-mst" placeholder="0401234567" tabindex="5"
+            <input type="text" id="inp-mst" placeholder="MST hoặc CCCD" tabindex="5"
               oninput="onMstInput(this)" onkeydown="onMstKeydown(event)" autocomplete="off" style="flex:1">
             <button type="button" id="btn-tracuu" onclick="traCuuMST()"
               style="padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--accent-light);cursor:pointer;font-size:12px;white-space:nowrap;font-weight:700;transition:all .2s"
-              title="Tra cứu tên đơn vị theo MST">🔍</button>
+              title="Tra cứu tên đơn vị theo MST hoặc CCCD">🔍</button>
           </div>
+          <!-- MST type hint -->
+          <div id="mst-type-hint" style="font-size:10px;color:var(--text-dim);margin-top:3px;min-height:14px"></div>
           <div id="mst-suggest" style="display:none;position:absolute;left:0;z-index:300;background:var(--surface2);border:1px solid var(--accent);border-radius:6px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.5);min-width:320px;top:100%"></div>
           <div id="mst-lookup-status" style="font-size:11px;margin-top:4px;min-height:16px"></div>
         </div>
@@ -259,7 +279,7 @@ tr:hover td{background:rgba(37,99,235,.04)}
       <!-- Tên đơn vị -->
       <div class="form-group" style="margin-bottom:10px;position:relative">
         <label>Tên đơn vị / Khách hàng <span style="color:var(--red)">*</span></label>
-        <input type="text" id="inp-donvi" placeholder="Tên công ty / đơn vị" tabindex="8"
+        <input type="text" id="inp-donvi" placeholder="Tên công ty / đơn vị / hộ kinh doanh" tabindex="8"
           onkeydown="fieldEnter(event,'inp-noidung')" autocomplete="off">
       </div>
 
@@ -323,13 +343,14 @@ tr:hover td{background:rgba(37,99,235,.04)}
         <tr>
           <th style="width:36px">#</th>
           <th style="white-space:nowrap">Ngày &amp; Giờ</th>
-          <th>MST</th>
+          <th>MST/CCCD</th>
           <th>SĐT</th>
           <th>Tên đơn vị</th>
           <th>Dịch vụ</th>
           <th>Người làm</th>
           <th>Nội dung</th>
           <th style="width:50px">Copy</th>
+          <th style="width:60px">Sửa</th>
           <th style="width:70px">Xóa</th>
         </tr>
       </thead>
@@ -450,6 +471,65 @@ tr:hover td{background:rgba(37,99,235,.04)}
   </div>
 </div>
 
+</div>
+
+<!-- ═══════════════════════════════════ EDIT MODAL ═══════════════════════════════════ -->
+<div id="edit-modal" style="display:none">
+  <div class="modal-overlay" onclick="closeEditModal(event)">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3>✏️ Sửa bản ghi</h3>
+        <button onclick="closeEditModal()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);padding:5px 12px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:700">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="edit-fbid">
+        <!-- Dịch vụ -->
+        <div style="margin-bottom:14px">
+          <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Dịch vụ hỗ trợ</div>
+          <div class="dv-pills" id="edit-dv-pills">
+            <button class="dv-pill" onclick="editSelectDV('BHXH',this)">🟢 BHXH</button>
+            <button class="dv-pill" onclick="editSelectDV('HD',this)">🔵 HĐ</button>
+            <button class="dv-pill" onclick="editSelectDV('CKS',this)">🟣 CKS</button>
+            <button class="dv-pill" onclick="editSelectDV('Khac',this)">⚪ Khác</button>
+          </div>
+          <input type="hidden" id="edit-dichvu">
+        </div>
+        <div class="edit-form-grid">
+          <div class="form-group">
+            <label>MST / CCCD</label>
+            <input type="text" id="edit-mst" placeholder="MST hoặc CCCD">
+          </div>
+          <div class="form-group">
+            <label>SĐT</label>
+            <input type="text" id="edit-sdt" placeholder="0901234567">
+          </div>
+          <div class="form-group span2">
+            <label>Tên đơn vị / Khách hàng <span style="color:var(--red)">*</span></label>
+            <input type="text" id="edit-donvi" placeholder="Tên công ty / đơn vị">
+          </div>
+          <div class="form-group">
+            <label>Ngày</label>
+            <input type="date" id="edit-ngay">
+          </div>
+          <div class="form-group">
+            <label>Giờ</label>
+            <input type="time" id="edit-gio" step="1">
+          </div>
+          <div class="form-group span2">
+            <label>Nội dung hỗ trợ</label>
+            <textarea id="edit-noidung" rows="3" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-family:inherit;font-size:13px;outline:none;resize:vertical;transition:border-color .2s" placeholder="Mô tả vấn đề và cách xử lý..."></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeEditModal()">Hủy</button>
+        <button class="btn btn-primary" id="btn-edit-save" onclick="saveEdit()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+          Lưu thay đổi
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div id="toast"></div>
@@ -581,9 +661,14 @@ function showPage(id,el){
 // DV PILL
 // ═══════════════════════════════════════════════
 function selectDV(dv,el){
-  document.querySelectorAll('.dv-pill').forEach(p=>{p.className='dv-pill';});
+  document.querySelectorAll('#dv-pills .dv-pill').forEach(p=>{p.className='dv-pill';});
   el.classList.add('active-'+dv.toLowerCase());
   document.getElementById('inp-dichvu').value=dv;
+}
+function editSelectDV(dv,el){
+  document.querySelectorAll('#edit-dv-pills .dv-pill').forEach(p=>{p.className='dv-pill';});
+  el.classList.add('active-'+dv.toLowerCase());
+  document.getElementById('edit-dichvu').value=dv;
 }
 
 // ═══════════════════════════════════════════════
@@ -626,7 +711,8 @@ function clearForm(){
   document.getElementById('inp-noidung').value='';
   document.getElementById('mst-lookup-status').textContent='';
   document.getElementById('mst-lookup-status').className='';
-  document.querySelectorAll('.dv-pill').forEach(p=>p.className='dv-pill');
+  document.getElementById('mst-type-hint').textContent='';
+  document.querySelectorAll('#dv-pills .dv-pill').forEach(p=>p.className='dv-pill');
 }
 
 async function deleteRecord(fbId){
@@ -636,21 +722,113 @@ async function deleteRecord(fbId){
 }
 
 // ═══════════════════════════════════════════════
+// EDIT RECORD
+// ═══════════════════════════════════════════════
+function openEditModal(fbId){
+  const rec=records.find(r=>r._fbId===fbId);
+  if(!rec){toast('Không tìm thấy bản ghi','error');return;}
+
+  document.getElementById('edit-fbid').value=fbId;
+  document.getElementById('edit-mst').value=rec.mst||'';
+  document.getElementById('edit-sdt').value=rec.sdt||'';
+  document.getElementById('edit-donvi').value=rec.donvi||'';
+  document.getElementById('edit-ngay').value=rec.ngay||'';
+  document.getElementById('edit-gio').value=rec.gio||'';
+  document.getElementById('edit-noidung').value=rec.noidung||'';
+
+  // Set dịch vụ
+  const dv=rec.dichvu||'';
+  document.getElementById('edit-dichvu').value=dv;
+  document.querySelectorAll('#edit-dv-pills .dv-pill').forEach(p=>p.className='dv-pill');
+  if(dv){
+    const pill=document.querySelector(`#edit-dv-pills .dv-pill[onclick*="editSelectDV('${dv}'"]`);
+    if(pill)pill.classList.add('active-'+dv.toLowerCase());
+  }
+
+  document.getElementById('edit-modal').style.display='block';
+  setTimeout(()=>document.getElementById('edit-donvi').focus(),100);
+}
+
+function closeEditModal(e){
+  if(e&&e.target!==document.querySelector('#edit-modal .modal-overlay'))return;
+  document.getElementById('edit-modal').style.display='none';
+}
+
+async function saveEdit(){
+  const fbId=document.getElementById('edit-fbid').value;
+  const donvi=document.getElementById('edit-donvi').value.trim();
+  const dichvu=document.getElementById('edit-dichvu').value;
+
+  if(!donvi){toast('Vui lòng nhập tên đơn vị','error');document.getElementById('edit-donvi').focus();return;}
+  if(!dichvu){toast('Vui lòng chọn loại dịch vụ','error');return;}
+
+  const btn=document.getElementById('btn-edit-save');
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Đang lưu...';
+
+  const updateData={
+    mst:document.getElementById('edit-mst').value.trim(),
+    sdt:document.getElementById('edit-sdt').value.trim(),
+    donvi,
+    dichvu,
+    ngay:document.getElementById('edit-ngay').value,
+    gio:document.getElementById('edit-gio').value,
+    noidung:document.getElementById('edit-noidung').value.trim(),
+  };
+
+  try{
+    await window._fb.updateRecord(fbId,updateData);
+    document.getElementById('edit-modal').style.display='none';
+    toast('✓ Đã cập nhật bản ghi!','success');
+  }catch(err){
+    toast('❌ Lỗi cập nhật: '+err.message,'error');
+  }finally{
+    btn.disabled=false;
+    btn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg> Lưu thay đổi';
+  }
+}
+
+// ═══════════════════════════════════════════════
 // KEYBOARD
 // ═══════════════════════════════════════════════
 document.addEventListener('keydown',e=>{
   if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();addRecord();}
-  if(e.key==='Escape'){document.getElementById('noidung-suggest').style.display='none';document.getElementById('mst-suggest').style.display='none';}
+  if(e.key==='Escape'){
+    document.getElementById('noidung-suggest').style.display='none';
+    document.getElementById('mst-suggest').style.display='none';
+    document.getElementById('edit-modal').style.display='none';
+  }
 });
 function fieldEnter(e,nextId){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();const next=document.getElementById(nextId);if(next)next.focus();}}
 
 // ═══════════════════════════════════════════════
-// MST AUTOCOMPLETE (từ lịch sử)
+// MST / CCCD TYPE DETECTION
 // ═══════════════════════════════════════════════
-let mstSuggestIdx=-1;
+function detectIdType(raw){
+  const cleaned=raw.trim().replace(/\s/g,'');
+  if(/^\d{12}$/.test(cleaned)) return 'cccd';
+  if(/^\d{9}$/.test(cleaned)) return 'cmnd';
+  if(/^\d{10}$/.test(cleaned)) return 'mst10';
+  if(/^\d{13}$/.test(cleaned)) return 'mst13';
+  if(/^\d{10}-\d{3}$/.test(cleaned)) return 'mst_chi_nhanh';
+  return null;
+}
 
 function onMstInput(inp){
   const val=inp.value.trim();
+  const type=detectIdType(val);
+  const hint=document.getElementById('mst-type-hint');
+
+  // Show type hint
+  const hintMap={
+    cccd:'🪪 CCCD / Căn cước công dân (12 số)',
+    cmnd:'🪪 CMND cũ (9 số)',
+    mst10:'🏢 Mã số thuế doanh nghiệp (10 số)',
+    mst13:'🏢 MST chi nhánh/đơn vị phụ thuộc (13 số)',
+    mst_chi_nhanh:'🏢 MST dạng xxxx-yyy',
+  };
+  hint.textContent=type?hintMap[type]:'';
+
+  // Autocomplete từ lịch sử
   const valNorm=val.replace(/-/g,'');
   const box=document.getElementById('mst-suggest');
   if(val.length<3){box.style.display='none';mstSuggestIdx=-1;return;}
@@ -675,6 +853,7 @@ function onMstInput(inp){
   box.style.width=Math.max(320,inp.offsetWidth)+'px';
 }
 
+let mstSuggestIdx=-1;
 function hlMst(idx){document.querySelectorAll('#mst-suggest div[data-idx]').forEach((d,i)=>{d.style.background=i===idx?'var(--accent-glow)':'';}); mstSuggestIdx=idx;}
 
 function onMstKeydown(e){
@@ -699,35 +878,20 @@ function fillFromMst(mst,sdt,donvi){
 }
 
 // ═══════════════════════════════════════════════
-// MST LOOKUP — TỐI ƯU V2
+// MST LOOKUP — hỗ trợ cả MST + CCCD (hộ KD)
 // ═══════════════════════════════════════════════
 function normalizeMST(raw) {
   const cleaned = raw.trim().replace(/\s/g, '');
-  
-  // Dạng 0104648885-003 hoặc 0104648885003
-  const dashMatch = cleaned.match(/^(\d{10})-(\d{3})$/);
-  if (dashMatch) {
-    const root = dashMatch[1];
-    const suffix = dashMatch[2];
-    return {
-      display: cleaned,
-      candidates: [`${root}${suffix}`, root],  // thử 13 số trước, rồi 10 số
-      root,
-      raw: cleaned
-    };
+  // Dạng dash: 0104648885-003
+  if (/^\d{10}-\d{3}$/.test(cleaned)) {
+    const root = cleaned.split('-')[0];
+    const suffix = cleaned.split('-')[1];
+    return { display: cleaned, candidates: [`${root}${suffix}`, root], root, type:'mst', raw: cleaned };
   }
-  if (/^\d{13}$/.test(cleaned)) return {
-    display: cleaned,
-    candidates: [cleaned, cleaned.slice(0, 10)],
-    root: cleaned.slice(0, 10),
-    raw: cleaned
-  };
-  if (/^\d{10}$/.test(cleaned)) return {
-    display: cleaned,
-    candidates: [cleaned],
-    root: cleaned,
-    raw: cleaned
-  };
+  if (/^\d{13}$/.test(cleaned)) return { display: cleaned, candidates: [cleaned, cleaned.slice(0,10)], root: cleaned.slice(0,10), type:'mst', raw: cleaned };
+  if (/^\d{10}$/.test(cleaned)) return { display: cleaned, candidates: [cleaned], root: cleaned, type:'mst', raw: cleaned };
+  if (/^\d{12}$/.test(cleaned)) return { display: cleaned, candidates: [cleaned], root: cleaned, type:'cccd', raw: cleaned };
+  if (/^\d{9}$/.test(cleaned))  return { display: cleaned, candidates: [cleaned], root: cleaned, type:'cmnd', raw: cleaned };
   return null;
 }
 
@@ -746,95 +910,90 @@ function setDonvi(name, addr) {
   toast('✓ Đã điền tên đơn vị!', 'success');
 }
 
-// Thử 1 mã qua tất cả API song song, trả về tên nếu thấy
-async function tryLookupOneCode(code, signal) {
+// Tra cứu 1 mã MST qua các API song song
+async function tryLookupOneMST(code, signal) {
   const isValid = name => name && name.trim().length > 3 && !/^\d+$/.test(name.trim());
-
   const tasks = [
-    // API 1: thuedientu GDT — chính thức nhất
     fetch(`https://thuedientu.gdt.gov.vn/etaxnnt/Request?func=PublicSynTaxCodeInfo&taxCode=${code}&format=json`, { signal })
-      .then(r => r.json())
-      .then(j => {
-        const name = j?.data?.name || j?.data?.Name || j?.Name || j?.name || '';
-        if (isValid(name)) return { name: name.trim(), addr: j?.data?.address || j?.data?.Address || '' };
+      .then(r=>r.json()).then(j=>{
+        const name=j?.data?.name||j?.data?.Name||j?.Name||j?.name||'';
+        if(isValid(name))return{name:name.trim(),addr:j?.data?.address||j?.data?.Address||''};
         return null;
-      }).catch(() => null),
-
-    // API 2: vietqr business
-    fetch(`https://api.vietqr.io/v2/business/${code}`, { signal, headers: { Accept: 'application/json' } })
-      .then(r => r.json())
-      .then(j => {
-        const name = j?.data?.name || j?.data?.businessName || '';
-        if (isValid(name)) return { name: name.trim(), addr: j?.data?.address || '' };
+      }).catch(()=>null),
+    fetch(`https://api.vietqr.io/v2/business/${code}`, { signal, headers:{Accept:'application/json'} })
+      .then(r=>r.json()).then(j=>{
+        const name=j?.data?.name||j?.data?.businessName||'';
+        if(isValid(name))return{name:name.trim(),addr:j?.data?.address||''};
         return null;
-      }).catch(() => null),
-
-    // API 3: tracuunnt qua allorigins (parse HTML bảng)
-    fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent('https://tracuunnt.gdt.gov.vn/tcnnt/mstdn.jsp?mst=' + code)}`, { signal })
-      .then(r => r.text())
-      .then(text => {
-        // Thử các pattern parse HTML của trang tracuunnt
-        const patterns = [
+      }).catch(()=>null),
+    fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent('https://tracuunnt.gdt.gov.vn/tcnnt/mstdn.jsp?mst='+code)}`,{signal})
+      .then(r=>r.text()).then(text=>{
+        const patterns=[
           /<td[^>]*>\s*\d{10,13}\s*<\/td>\s*<td[^>]*>\s*([^<]{5,}?)\s*<\/td>/i,
           /class="[^"]*taxname[^"]*"[^>]*>\s*([^<]{5,}?)\s*<\/td>/i,
-          /Tên người nộp thuế[^<]*<\/td>\s*<td[^>]*>\s*([^<]{5,}?)\s*<\/td>/i,
         ];
-        for (const pat of patterns) {
-          const m = text.match(pat);
-          if (m) {
-            const name = m[1].trim();
-            if (isValid(name)) return { name, addr: '' };
-          }
-        }
+        for(const pat of patterns){const m=text.match(pat);if(m&&isValid(m[1].trim()))return{name:m[1].trim(),addr:''};}
         return null;
-      }).catch(() => null),
+      }).catch(()=>null),
+    fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent('https://masothue.com/Search/SearchByTaxId?taxid='+code)}`,{signal})
+      .then(r=>r.text()).then(text=>{
+        try{const j=JSON.parse(text);const name=j?.data?.[0]?.name||j?.[0]?.name||'';if(isValid(name))return{name:name.trim(),addr:''};}catch(_){}
+        const patterns=[/class="tax-name"[^>]*>\s*([^<]{5,})/i,/property="og:title"\s+content="([^"]{5,})"/i];
+        for(const pat of patterns){const m=text.match(pat);if(m){let name=m[1].trim().replace(/^\d{10,13}\s*[-–]\s*/,'').replace(/\s*[|–-]\s*(masothue|tracuu).*/i,'').trim();if(isValid(name))return{name,addr:''};}}
+        return null;
+      }).catch(()=>null),
+  ];
+  const results=await Promise.allSettled(tasks);
+  for(const r of results){if(r.status==='fulfilled'&&r.value)return r.value;}
+  return null;
+}
 
-    // API 4: masothue.com qua allorigins
-    fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent('https://masothue.com/Search/SearchByTaxId?taxid=' + code)}`, { signal })
-      .then(r => r.text())
-      .then(text => {
-        // Thử parse JSON trước
-        try {
-          const j = JSON.parse(text);
-          const name = j?.data?.[0]?.name || j?.[0]?.name || '';
-          if (isValid(name)) return { name: name.trim(), addr: '' };
-        } catch (_) {}
-        // Rồi parse HTML
-        const patterns = [
-          /class="tax-name"[^>]*>\s*([^<]{5,})/i,
-          /property="og:title"\s+content="([^"]{5,})"/i,
-          /<h1[^>]*>([^<]{5,})<\/h1>/i,
-        ];
-        for (const pat of patterns) {
-          const m = text.match(pat);
-          if (m) {
-            let name = m[1].trim()
-              .replace(/^\d{10,13}\s*[-–]\s*/, '')
-              .replace(/\s*[|–-]\s*(masothue|tracuu).*/i, '')
-              .trim();
-            if (isValid(name)) return { name, addr: '' };
-          }
-        }
+// Tra cứu CCCD/CMND qua các nguồn có thể
+async function tryLookupCCCD(code, signal) {
+  const isValid = name => name && name.trim().length > 3 && !/^\d+$/.test(name.trim());
+
+  // Thử qua tracuunnt với CCCD (một số hộ KD đăng ký bằng CCCD)
+  const tasks = [
+    fetch(`https://thuedientu.gdt.gov.vn/etaxnnt/Request?func=PublicSynTaxCodeInfo&taxCode=${code}&format=json`, { signal })
+      .then(r=>r.json()).then(j=>{
+        const name=j?.data?.name||j?.data?.Name||j?.Name||j?.name||'';
+        if(isValid(name))return{name:name.trim(),addr:j?.data?.address||''};
         return null;
-      }).catch(() => null),
+      }).catch(()=>null),
+
+    // Thử vietqr với CCCD
+    fetch(`https://api.vietqr.io/v2/business/${code}`, { signal, headers:{Accept:'application/json'} })
+      .then(r=>r.json()).then(j=>{
+        const name=j?.data?.name||j?.data?.businessName||j?.data?.ownerName||'';
+        if(isValid(name))return{name:name.trim(),addr:j?.data?.address||''};
+        return null;
+      }).catch(()=>null),
+
+    // masothue có thể tra bằng CCCD
+    fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent('https://masothue.com/Search/SearchByTaxId?taxid='+code)}`,{signal})
+      .then(r=>r.text()).then(text=>{
+        const patterns=[/class="tax-name"[^>]*>\s*([^<]{5,})/i,/property="og:title"\s+content="([^"]{5,})"/i];
+        for(const pat of patterns){const m=text.match(pat);if(m){let name=m[1].trim().replace(/^\d{9,12}\s*[-–]\s*/,'').replace(/\s*[|–-]\s*(masothue|tracuu).*/i,'').trim();if(isValid(name))return{name,addr:''};}}
+        return null;
+      }).catch(()=>null),
   ];
 
-  // Chạy song song, lấy kết quả đầu tiên hợp lệ
-  const results = await Promise.allSettled(tasks);
-  for (const r of results) {
-    if (r.status === 'fulfilled' && r.value) return r.value;
-  }
+  const results=await Promise.allSettled(tasks);
+  for(const r of results){if(r.status==='fulfilled'&&r.value)return r.value;}
   return null;
 }
 
 async function traCuuMST() {
   const rawMst = document.getElementById('inp-mst').value;
-  if (!rawMst.trim()) { toast('Nhập MST trước khi tra cứu', 'error'); return; }
+  if (!rawMst.trim()) { toast('Nhập MST hoặc CCCD trước khi tra cứu', 'error'); return; }
 
   const mstObj = normalizeMST(rawMst);
-  if (!mstObj) { toast('MST không hợp lệ — cần 10 số, 13 số, hoặc dạng 1234567890-001', 'error'); return; }
+  if (!mstObj) {
+    toast('Số không hợp lệ — cần MST (10/13 số), CCCD (12 số) hoặc dạng 1234567890-001', 'error');
+    return;
+  }
 
-  // 1. Tìm trong lịch sử trước (nhanh nhất, không cần mạng)
+  // 1. Tìm trong lịch sử trước (nhanh nhất)
   const seen = new Map();
   records.forEach(r => {
     if (!r.mst) return;
@@ -851,25 +1010,35 @@ async function traCuuMST() {
 
   const btn = document.getElementById('btn-tracuu');
   btn.textContent = '⏳'; btn.disabled = true;
-  setStatus('Đang tra cứu...', 'loading');
+
+  const isCCCD = mstObj.type === 'cccd' || mstObj.type === 'cmnd';
+
+  if (isCCCD) {
+    setStatus('🔍 Đang tra cứu CCCD/CMND...', 'loading');
+  } else {
+    setStatus('🔍 Đang tra cứu MST...', 'loading');
+  }
   document.getElementById('mst-suggest').style.display = 'none';
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 9000); // tổng timeout 9s
+  const timeout = setTimeout(() => controller.abort(), 9000);
   let found = false;
 
   try {
-    // 2. Thử từng candidate code (13 số trước, rồi 10 số)
-    for (const code of mstObj.candidates) {
-      if (found) break;
-      const result = await tryLookupOneCode(code, controller.signal);
-      if (result) {
-        setDonvi(result.name, result.addr);
-        found = true;
+    if (isCCCD) {
+      // Tra cứu CCCD
+      const result = await tryLookupCCCD(mstObj.root, controller.signal);
+      if (result) { setDonvi(result.name, result.addr); found = true; }
+    } else {
+      // Tra cứu MST, thử từng candidate
+      for (const code of mstObj.candidates) {
+        if (found) break;
+        const result = await tryLookupOneMST(code, controller.signal);
+        if (result) { setDonvi(result.name, result.addr); found = true; }
       }
     }
   } catch (e) {
-    // AbortError hoặc lỗi khác — tiếp tục xuống fallback
+    // AbortError hoặc lỗi khác
   } finally {
     clearTimeout(timeout);
   }
@@ -877,22 +1046,31 @@ async function traCuuMST() {
   if (!found) {
     const statusEl = document.getElementById('mst-lookup-status');
     statusEl.className = 'mst-status-warn';
-    statusEl.innerHTML = `⚠ Không tự tra được &nbsp;<button onclick="openMstPopup('${mstObj.display}')" style="background:var(--accent);color:white;border:none;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:700">🔗 Mở tra cứu</button>`;
+    if (isCCCD) {
+      // CCCD thường không tra được tự động — hướng dẫn thủ công
+      statusEl.innerHTML = `⚠ CCCD hộ KD chưa tra tự động được &nbsp;<button onclick="openCCCDPopup('${mstObj.display}')" style="background:var(--orange);color:white;border:none;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:700">🔗 Tra thủ công</button>`;
+    } else {
+      statusEl.innerHTML = `⚠ Không tự tra được &nbsp;<button onclick="openMstPopup('${mstObj.display}')" style="background:var(--accent);color:white;border:none;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:700">🔗 Mở tra cứu</button>`;
+    }
   }
 
   btn.textContent = '🔍'; btn.disabled = false;
 }
 
-function setDonvi(name,addr){
-  document.getElementById('inp-donvi').value=name;
-  const short=addr?name+' · '+addr.slice(0,60):name;
-  setStatus('✓ '+short,'ok');
-  document.getElementById('mst-suggest').style.display='none';
-  document.getElementById('inp-sdt').focus();
-  toast('✓ Đã điền tên đơn vị!','success');
+function openMstPopup(mst){
+  _openLookupPopup(`https://masothue.com/${mst}`, `🔍 Tra cứu MST: ${mst}`, 'Tìm tên đơn vị → copy → đóng popup → paste vào ô tên');
 }
 
-function openMstPopup(mst){
+function openCCCDPopup(cccd){
+  // Với CCCD hộ KD, tra qua tracuunnt hoặc masothue
+  _openLookupPopup(
+    `https://masothue.com/Search/SearchByTaxId?taxid=${cccd}`,
+    `🪪 Tra cứu CCCD hộ KD: ${cccd}`,
+    'Tìm tên chủ hộ KD → copy → đóng popup → paste vào ô tên đơn vị'
+  );
+}
+
+function _openLookupPopup(url, title, hint){
   const existing=document.getElementById('mst-modal');if(existing)existing.remove();
   const modal=document.createElement('div');
   modal.id='mst-modal';
@@ -900,11 +1078,11 @@ function openMstPopup(mst){
   modal.innerHTML=`
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;width:100%;max-width:860px;height:80vh;display:flex;flex-direction:column;overflow:hidden">
       <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0">
-        <span style="font-size:13px;font-weight:700;color:var(--accent-light)">🔍 Tra cứu MST: ${mst}</span>
-        <span style="font-size:11px;color:var(--text-muted)">Tìm tên đơn vị → copy → đóng popup → paste vào ô tên</span>
+        <span style="font-size:13px;font-weight:700;color:var(--accent-light)">${title}</span>
+        <span style="font-size:11px;color:var(--text-muted)">${hint}</span>
         <button onclick="document.getElementById('mst-modal').remove()" style="margin-left:auto;padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;font-size:13px;font-weight:700">✕ Đóng</button>
       </div>
-      <iframe src="https://masothue.com/${mst}" style="flex:1;border:none;width:100%;background:white" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+      <iframe src="${url}" style="flex:1;border:none;width:100%;background:white" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
     </div>`;
   document.body.appendChild(modal);
   modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
@@ -999,19 +1177,27 @@ function renderTable(resetPage=true){
     let ngayHien='—';
     if(r.ngay){const parts=r.ngay.split('-');ngayHien=`${parts[2]}/${parts[1]}/${parts[0]}`;}
     const gioHien=r.gio?r.gio.slice(0,5):'';
+
+    // Show CCCD badge if 12 digits
+    const mstDisplay=(r.mst||'');
+    const mstBadge=/^\d{12}$/.test(mstDisplay.replace(/-/g,''))
+      ?`<span style="font-size:9px;background:rgba(249,115,22,.2);color:#fb923c;padding:1px 5px;border-radius:3px;margin-left:4px;font-weight:700">CCCD</span>`
+      :'';
+
     return `<tr>
       <td style="color:var(--text-dim)">${globalIdx+1}</td>
       <td class="mono" style="white-space:nowrap">
         <div style="color:var(--text);font-size:12px">${ngayHien}</div>
         ${gioHien?`<div style="color:var(--text-muted);font-size:11px">${gioHien}</div>`:''}
       </td>
-      <td class="mono">${r.mst||'—'}</td>
+      <td class="mono">${mstDisplay||'—'}${mstBadge}</td>
       <td class="mono">${r.sdt||'—'}</td>
       <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${donviSafe}">${r.donvi}</td>
       <td><span class="badge ${DV_BADGE[r.dichvu]||'badge-khac'}">${dvLabel}</span></td>
       <td class="mono">${nguoiVal}</td>
       <td style="max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text-muted)" title="${noidungSafe}">${r.noidung||'—'}</td>
       <td><button class="btn btn-ghost btn-sm" style="padding:4px 8px;font-size:11px" onclick="copyRow('${mstSafe}','${sdtSafe}','${donviSafe}','${dvLabel}','${nguoiVal}','${noidungSafe.replace(/'/g,"&#39;")}')">📋</button></td>
+      <td><button class="btn btn-warning btn-sm" onclick="openEditModal('${r._fbId}')" title="Sửa bản ghi">✏️</button></td>
       <td><button class="btn btn-danger btn-sm" onclick="deleteRecord('${r._fbId}')">Xóa</button></td>
     </tr>`;
   }).join('');
@@ -1036,7 +1222,7 @@ function copyRow(mst,sdt,donvi,dv,nguoi,noidung){
 function clearFilters(){document.getElementById('f-from').value='';document.getElementById('f-to').value='';document.getElementById('f-dv').value='';document.getElementById('f-search').value='';renderTable();}
 function exportCSV(){
   const data=getFiltered();if(!data.length){toast('Không có dữ liệu','error');return;}
-  const header='Ngày,Dịch vụ,Tên đơn vị,MST,SĐT,Nội dung';
+  const header='Ngày,Dịch vụ,Tên đơn vị,MST/CCCD,SĐT,Nội dung';
   const rows=data.map(r=>[r.ngay,r.dichvu,`"${r.donvi}"`,r.mst,r.sdt,`"${r.noidung}"`].join(','));
   const csv='\uFEFF'+[header,...rows].join('\n');
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
@@ -1045,7 +1231,7 @@ function exportCSV(){
 }
 function copyTableToClipboard(){
   const data=getFiltered();if(!data.length){toast('Không có dữ liệu','error');return;}
-  const header=['MST','SĐT','Tên đơn vị','Dịch vụ','Người làm','Nội dung'].join('\t');
+  const header=['MST/CCCD','SĐT','Tên đơn vị','Dịch vụ','Người làm','Nội dung'].join('\t');
   const rows=data.map(r=>[r.mst||'',r.sdt||'',r.donvi||'',DV_LABELS[r.dichvu]||r.dichvu||'',r.nguoi||'Đông',r.noidung||''].join('\t'));
   const text=[header,...rows].join('\n');
   navigator.clipboard.writeText(text).then(()=>toast('✓ Đã copy! Dán vào Excel bằng Ctrl+V','success')).catch(()=>{
