@@ -738,16 +738,26 @@ function fieldEnter(e,nextId){
 }
 
 // ═══════════════════════════════════════════════
-// MST AUTOCOMPLETE + TRA CỨU API THUẾ
+// MST AUTOCOMPLETE + TRA CỨU THUẾ
 // ═══════════════════════════════════════════════
 let mstSuggestIdx=-1;
+
+// Chuẩn hoá MST: chấp nhận 0104648885-003, 0104648885003, 10 số, 13 số
+function normalizeMST(raw){
+  const cleaned=raw.trim().replace(/\s/g,'');
+  // Dạng có gạch ngang: 10-3
+  const dashMatch=cleaned.match(/^(\d{10})-(\d{3})$/);
+  if(dashMatch) return {display:cleaned, api:`${dashMatch[1]}${dashMatch[2]}`, raw:cleaned};
+  if(/^\d{13}$/.test(cleaned)) return {display:cleaned, api:cleaned, raw:cleaned};
+  if(/^\d{10}$/.test(cleaned)) return {display:cleaned, api:cleaned, raw:cleaned};
+  return null;
+}
 
 function onMstInput(inp){
   const val=inp.value.trim();
   const valNorm=val.replace(/-/g,'');
   const box=document.getElementById('mst-suggest');
   if(val.length<3){box.style.display='none';mstSuggestIdx=-1;return;}
-  // Tìm các records có MST khớp từ lịch sử local (hỗ trợ cả dạng có và không có gạch ngang)
   const seen=new Map();
   records.forEach(r=>{
     if(!r.mst)return;
@@ -768,7 +778,6 @@ function onMstInput(inp){
       ${m.sdt?`<span style="color:var(--text-dim);font-size:11px;margin-left:6px">${m.sdt}</span>`:''}
     </div>`).join('');
   box.style.display='block';
-  const rect=inp.getBoundingClientRect();
   box.style.width=Math.max(320,inp.offsetWidth)+'px';
 }
 
@@ -791,33 +800,14 @@ function onMstKeydown(e){
   if(e.key==='Enter'){e.preventDefault();document.getElementById('inp-sdt').focus();}
 }
 
-// Chuẩn hoá MST: chấp nhận 0104648885-003, 0104648885003, 0104648885 003 v.v.
-function normalizeMST(raw){
-  // Giữ lại chữ số và dấu gạch ngang
-  const cleaned=raw.trim().replace(/\s/g,'');
-  // Dạng có gạch ngang: 10-3 hoặc 10-3 ký tự → chuẩn hoá thành dạng không dấu cho API
-  const dashMatch=cleaned.match(/^(\d{10})-(\d{3})$/);
-  if(dashMatch) return {display:cleaned, api:`${dashMatch[1]}${dashMatch[2]}`, raw:cleaned};
-  // Dạng 13 số liền
-  if(/^\d{13}$/.test(cleaned)) return {display:cleaned, api:cleaned, raw:cleaned};
-  // Dạng 10 số liền
-  if(/^\d{10}$/.test(cleaned)) return {display:cleaned, api:cleaned, raw:cleaned};
-  return null;
-}
-
 async function traCuuMST(){
   const rawMst=document.getElementById('inp-mst').value;
   if(!rawMst.trim()){toast('Nhập MST trước khi tra cứu','error');return;}
-
   const mstObj=normalizeMST(rawMst);
-  if(!mstObj){
-    toast('MST không hợp lệ — cần 10 số, 13 số, hoặc dạng 1234567890-001','error');
-    return;
-  }
+  if(!mstObj){toast('MST không hợp lệ — cần 10 số, 13 số, hoặc dạng 1234567890-001','error');return;}
 
-  const mstApi=mstObj.api;   // dùng cho API (không dấu gạch)
-  const mstDisplay=mstObj.display; // dùng để hiển thị & link
-
+  const mstApi=mstObj.api;
+  const mstDisplay=mstObj.display;
   const statusEl=document.getElementById('mst-lookup-status');
   const btn=document.getElementById('btn-tracuu');
   btn.textContent='⏳';btn.disabled=true;
@@ -825,83 +815,137 @@ async function traCuuMST(){
 
   let found=false;
 
-  // ── API 1: VietQR Business (hỗ trợ tốt MST chính & chi nhánh) ──
+  // ── API 1: allorigins.win → masothue.com (CORS proxy đáng tin cậy) ──
   if(!found){
     try{
-      const r=await fetch(`https://api.vietqr.io/v2/business/${mstApi}`,{
-        headers:{Accept:'application/json','x-client-id':'phanduyDong','x-api-key':''}
-      });
+      const targetUrl=`https://masothue.com/${mstDisplay}`;
+      const proxyUrl=`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
+      const r=await fetch(proxyUrl,{signal:AbortSignal.timeout(8000)});
       if(r.ok){
-        const j=await r.json();
-        const name=j?.data?.name||j?.data?.shortName||'';
-        if(name){
-          const addr=j?.data?.address||'';
-          setDonvi(name,addr,statusEl);
-          found=true;
-        }
-      }
-    }catch(e){}
-  }
-
-  // ── API 2: Thuế VN qua CORS proxy (scrape masothue.com JSON endpoint) ──
-  if(!found){
-    try{
-      // masothue.com có API nội bộ trả JSON
-      const proxyUrl=`https://corsproxy.io/?${encodeURIComponent('https://masothue.com/Search/SearchByTaxId?taxid='+mstApi)}`;
-      const r=await fetch(proxyUrl,{headers:{Accept:'application/json, text/html'}});
-      if(r.ok){
-        const text=await r.text();
-        // Thử parse JSON trước
-        try{
-          const j=JSON.parse(text);
-          const name=j?.data?.[0]?.name||j?.Name||j?.[0]?.name||'';
-          if(name){setDonvi(name,'',statusEl);found=true;}
-        }catch(_){
-          // Parse HTML: tìm thẻ h1 hoặc title công ty
-          const titleMatch=text.match(/class="tax-name"[^>]*>([^<]+)/i)
-            ||text.match(/<h1[^>]*>([^<]+)<\/h1>/i)
-            ||text.match(/title="([^"]+)"\s+class="company/i);
-          if(titleMatch&&titleMatch[1].trim().length>3){
-            setDonvi(titleMatch[1].trim(),'',statusEl);found=true;
+        const html=await r.text();
+        // Parse tên từ masothue.com HTML
+        const patterns=[
+          /class="tax-name"[^>]*>\s*([^<]{5,})/i,
+          /<h1[^>]*>\s*\d{10,13}[^<]*-\s*([^<]{5,})<\/h1>/i,
+          /<h1[^>]*>([^<]{5,})<\/h1>/i,
+          /property="og:title"\s+content="([^"]{5,})"/i,
+          /<title>([^<]{5,})<\/title>/i,
+        ];
+        for(const pat of patterns){
+          const m=html.match(pat);
+          if(m){
+            let name=m[1].trim();
+            // Loại bỏ prefix MST nếu có
+            name=name.replace(/^\d{10,13}\s*[-–]\s*/,'').trim();
+            // Bỏ " | masothue.com" hoặc tương tự
+            name=name.replace(/\s*[|–-]\s*(masothue|tracuu|thue).*/i,'').trim();
+            if(name.length>3 && !/^(tra cuu|search|home|index)/i.test(name)){
+              setDonvi(name,'',statusEl);found=true;break;
+            }
           }
         }
       }
     }catch(e){}
   }
 
-  // ── API 3: api.vietqr.io lookup bằng mstDisplay (có dấu gạch ngang) ──
-  if(!found&&mstObj.raw.includes('-')){
+  // ── API 2: corsproxy.io → masothue.com ──
+  if(!found){
     try{
-      const r=await fetch(`https://api.vietqr.io/v2/business/${mstDisplay}`,{headers:{Accept:'application/json'}});
+      const targetUrl=`https://masothue.com/${mstDisplay}`;
+      const proxyUrl=`https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+      const r=await fetch(proxyUrl,{signal:AbortSignal.timeout(8000)});
       if(r.ok){
-        const j=await r.json();
-        const name=j?.data?.name||'';
-        if(name){setDonvi(name,j?.data?.address||'',statusEl);found=true;}
+        const html=await r.text();
+        const patterns=[
+          /class="tax-name"[^>]*>\s*([^<]{5,})/i,
+          /property="og:title"\s+content="([^"]{5,})"/i,
+          /<h1[^>]*>([^<]{5,})<\/h1>/i,
+        ];
+        for(const pat of patterns){
+          const m=html.match(pat);
+          if(m){
+            let name=m[1].trim().replace(/^\d{10,13}\s*[-–]\s*/,'').replace(/\s*[|–-]\s*(masothue|tracuu).*/i,'').trim();
+            if(name.length>3){setDonvi(name,'',statusEl);found=true;break;}
+          }
+        }
       }
     }catch(e){}
   }
 
-  // ── API 4: Thử endpoint tra cứu trực tiếp cục thuế (CORS proxy) ──
+  // ── API 3: allorigins → masothue JSON search endpoint ──
   if(!found){
     try{
-      const url=`https://corsproxy.io/?${encodeURIComponent('https://tracuunnt.gdt.gov.vn/tcnnt/mstdn.jsp')}`;
-      const body=new URLSearchParams({mst:mstApi,loai:'1'});
-      const r=await fetch(url,{method:'POST',body,headers:{'Content-Type':'application/x-www-form-urlencoded'}});
+      const targetUrl=`https://masothue.com/Search/SearchByTaxId?taxid=${mstApi}`;
+      const proxyUrl=`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
+      const r=await fetch(proxyUrl,{signal:AbortSignal.timeout(6000)});
       if(r.ok){
         const text=await r.text();
-        // tìm tên trong kết quả HTML
-        const m=text.match(/Tên người nộp thuế[^:]*:\s*<[^>]+>([^<]+)/i)
-          ||text.match(/class="[^"]*ten[^"]*"[^>]*>([^<]{5,})</i);
-        if(m&&m[1].trim().length>3){setDonvi(m[1].trim(),'',statusEl);found=true;}
+        try{
+          const j=JSON.parse(text);
+          const name=j?.data?.[0]?.name||j?.[0]?.name||j?.Name||'';
+          if(name.length>3){setDonvi(name,'',statusEl);found=true;}
+        }catch(_){
+          // fallback HTML parse
+          const m=text.match(/class="tax-name"[^>]*>([^<]+)/i);
+          if(m&&m[1].trim().length>3){setDonvi(m[1].trim(),'',statusEl);found=true;}
+        }
       }
     }catch(e){}
   }
 
+  // ── API 4: thử MST dạng có gạch ngang riêng nếu là chi nhánh ──
+  if(!found&&mstObj.raw.includes('-')){
+    try{
+      // Thử với MST không có gạch (13 số liền)
+      const targetUrl=`https://masothue.com/${mstApi}`;
+      const proxyUrl=`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
+      const r=await fetch(proxyUrl,{signal:AbortSignal.timeout(6000)});
+      if(r.ok){
+        const html=await r.text();
+        const m=html.match(/class="tax-name"[^>]*>\s*([^<]{5,})/i)
+          ||html.match(/property="og:title"\s+content="([^"]{5,})"/i);
+        if(m){
+          let name=m[1].trim().replace(/^\d{10,13}\s*[-–]\s*/,'').trim();
+          if(name.length>3){setDonvi(name,'',statusEl);found=true;}
+        }
+      }
+    }catch(e){}
+  }
+
+  // ── Fallback: Mở popup nhúng masothue.com ──
   if(!found){
     statusEl.style.color='var(--orange)';
-    statusEl.innerHTML=`⚠ Không tra cứu tự động được · <a href="https://masothue.com/${mstDisplay}" target="_blank" style="color:var(--accent-light);font-weight:700">🔗 Mở masothue.com</a> rồi copy tên vào`;
+    statusEl.innerHTML=`⚠ Không tự tra được · <button onclick="openMstPopup('${mstDisplay}')" style="background:var(--accent);color:white;border:none;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:700">🔗 Mở tra cứu</button>`;
   }
   btn.textContent='🔍';btn.disabled=false;
+}
+
+// Popup nhúng masothue.com để user có thể nhìn rồi copy tên
+function openMstPopup(mst){
+  // Tạo modal với iframe nhúng masothue.com
+  const existing=document.getElementById('mst-modal');
+  if(existing)existing.remove();
+
+  const modal=document.createElement('div');
+  modal.id='mst-modal';
+  modal.style.cssText=`position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:20px`;
+  modal.innerHTML=`
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;width:100%;max-width:860px;height:80vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.6)">
+      <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0">
+        <span style="font-size:13px;font-weight:700;color:var(--accent-light)">🔍 Tra cứu MST: ${mst}</span>
+        <span style="font-size:11px;color:var(--text-muted)">Tìm tên đơn vị → copy → đóng popup → paste vào ô tên</span>
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+          <button onclick="document.getElementById('mst-modal').remove()" 
+            style="padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;font-size:13px;font-weight:700">✕ Đóng</button>
+        </div>
+      </div>
+      <iframe src="https://masothue.com/${mst}" 
+        style="flex:1;border:none;width:100%;background:white"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-popups">
+      </iframe>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
 }
 
 function setDonvi(name, addr, statusEl){
