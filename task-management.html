@@ -699,155 +699,188 @@ function fillFromMst(mst,sdt,donvi){
 }
 
 // ═══════════════════════════════════════════════
-// TRA CỨU MST — ĐÃ SỬA
+// MST LOOKUP — TỐI ƯU V2
 // ═══════════════════════════════════════════════
-function normalizeMST(raw){
-  const cleaned=raw.trim().replace(/\s/g,'');
-  const dashMatch=cleaned.match(/^(\d{10})-(\d{3})$/);
-  if(dashMatch)return{display:cleaned,api:`${dashMatch[1]}${dashMatch[2]}`,short:dashMatch[1],raw:cleaned};
-  if(/^\d{13}$/.test(cleaned))return{display:cleaned,api:cleaned,short:cleaned.slice(0,10),raw:cleaned};
-  if(/^\d{10}$/.test(cleaned))return{display:cleaned,api:cleaned,short:cleaned,raw:cleaned};
+function normalizeMST(raw) {
+  const cleaned = raw.trim().replace(/\s/g, '');
+  
+  // Dạng 0104648885-003 hoặc 0104648885003
+  const dashMatch = cleaned.match(/^(\d{10})-(\d{3})$/);
+  if (dashMatch) {
+    const root = dashMatch[1];
+    const suffix = dashMatch[2];
+    return {
+      display: cleaned,
+      candidates: [`${root}${suffix}`, root],  // thử 13 số trước, rồi 10 số
+      root,
+      raw: cleaned
+    };
+  }
+  if (/^\d{13}$/.test(cleaned)) return {
+    display: cleaned,
+    candidates: [cleaned, cleaned.slice(0, 10)],
+    root: cleaned.slice(0, 10),
+    raw: cleaned
+  };
+  if (/^\d{10}$/.test(cleaned)) return {
+    display: cleaned,
+    candidates: [cleaned],
+    root: cleaned,
+    raw: cleaned
+  };
   return null;
 }
 
-function setStatus(msg, type){
-  const el=document.getElementById('mst-lookup-status');
-  el.textContent=msg;
-  el.className='mst-status-'+type;
+function setStatus(msg, type) {
+  const el = document.getElementById('mst-lookup-status');
+  el.textContent = msg;
+  el.className = 'mst-status-' + type;
 }
 
-async function traCuuMST(){
-  const rawMst=document.getElementById('inp-mst').value;
-  if(!rawMst.trim()){toast('Nhập MST trước khi tra cứu','error');return;}
-  const mstObj=normalizeMST(rawMst);
-  if(!mstObj){toast('MST không hợp lệ — cần 10 số, 13 số, hoặc dạng 1234567890-001','error');return;}
+function setDonvi(name, addr) {
+  document.getElementById('inp-donvi').value = name;
+  const short = addr ? name + ' · ' + addr.slice(0, 60) : name;
+  setStatus('✓ ' + short, 'ok');
+  document.getElementById('mst-suggest').style.display = 'none';
+  document.getElementById('inp-sdt').focus();
+  toast('✓ Đã điền tên đơn vị!', 'success');
+}
 
-  const btn=document.getElementById('btn-tracuu');
-  btn.textContent='⏳';btn.disabled=true;
-  setStatus('Đang tra cứu...','loading');
-  document.getElementById('mst-suggest').style.display='none';
+// Thử 1 mã qua tất cả API song song, trả về tên nếu thấy
+async function tryLookupOneCode(code, signal) {
+  const isValid = name => name && name.trim().length > 3 && !/^\d+$/.test(name.trim());
 
-  let found=false;
+  const tasks = [
+    // API 1: thuedientu GDT — chính thức nhất
+    fetch(`https://thuedientu.gdt.gov.vn/etaxnnt/Request?func=PublicSynTaxCodeInfo&taxCode=${code}&format=json`, { signal })
+      .then(r => r.json())
+      .then(j => {
+        const name = j?.data?.name || j?.data?.Name || j?.Name || j?.name || '';
+        if (isValid(name)) return { name: name.trim(), addr: j?.data?.address || j?.data?.Address || '' };
+        return null;
+      }).catch(() => null),
 
-  // ── API 1: thuedientu.gdt.gov.vn (chính thức, JSON, thường không cần proxy) ──
-  if(!found){
-    try{
-      const urls=[
-        `https://thuedientu.gdt.gov.vn/etaxnnt/Request?func=PublicSynTaxCodeInfo&taxCode=${mstObj.api}&format=json`,
-        `https://thuedientu.gdt.gov.vn/etaxnnt/Request?func=PublicSynTaxCodeInfo&taxCode=${mstObj.short}&format=json`,
-      ];
-      for(const url of urls){
-        if(found)break;
-        try{
-          const r=await fetch(url,{signal:AbortSignal.timeout(7000)});
-          if(r.ok){
-            const j=await r.json();
-            // Response có thể là {data:{name,address,...}} hoặc {Name,...}
-            const name=j?.data?.name||j?.data?.Name||j?.Name||j?.name||'';
-            if(name&&name.length>3){
-              const addr=j?.data?.address||j?.data?.Address||'';
-              setDonvi(name,addr);found=true;
-            }
-          }
-        }catch(_){}
-      }
-    }catch(_){}
-  }
+    // API 2: vietqr business
+    fetch(`https://api.vietqr.io/v2/business/${code}`, { signal, headers: { Accept: 'application/json' } })
+      .then(r => r.json())
+      .then(j => {
+        const name = j?.data?.name || j?.data?.businessName || '';
+        if (isValid(name)) return { name: name.trim(), addr: j?.data?.address || '' };
+        return null;
+      }).catch(() => null),
 
-  // ── API 2: api.vietqr.io/v2/business — miễn phí, JSON ──
-  if(!found){
-    try{
-      const r=await fetch(`https://api.vietqr.io/v2/business/${mstObj.api}`,{
-        signal:AbortSignal.timeout(6000),
-        headers:{'Accept':'application/json'}
-      });
-      if(r.ok){
-        const j=await r.json();
-        const name=j?.data?.name||j?.data?.businessName||'';
-        if(name&&name.length>3){
-          setDonvi(name,j?.data?.address||'');found=true;
-        }
-      }
-    }catch(_){}
-  }
-
-  // ── API 3: api-business.vietqr.io ──
-  if(!found){
-    try{
-      const r=await fetch(`https://api-business.vietqr.io/v1/business/info?taxCode=${mstObj.api}`,{
-        signal:AbortSignal.timeout(6000),
-        headers:{'Accept':'application/json','x-api-key':'vqr-free'}
-      });
-      if(r.ok){
-        const j=await r.json();
-        const name=j?.data?.name||j?.data?.companyName||j?.name||'';
-        if(name&&name.length>3){setDonvi(name,'');found=true;}
-      }
-    }catch(_){}
-  }
-
-  // ── API 4: tracuunnt.gdt.gov.vn CORS proxy qua allorigins ──
-  if(!found){
-    try{
-      const apiUrl=`https://tracuunnt.gdt.gov.vn/tcnnt/mstdn.jsp?mst=${mstObj.api}`;
-      const proxyUrl=`https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`;
-      const r=await fetch(proxyUrl,{signal:AbortSignal.timeout(8000)});
-      if(r.ok){
-        const text=await r.text();
-        // Parse tên từ bảng HTML của tracuunnt
-        const rowMatch=text.match(/<td[^>]*>\s*(\d{10,13})\s*<\/td>\s*<td[^>]*>\s*([^<]{5,}?)\s*<\/td>/i);
-        if(rowMatch&&rowMatch[2]){
-          const name=rowMatch[2].trim();
-          if(name.length>3&&!/^\d+$/.test(name)){setDonvi(name,'');found=true;}
-        }
-        if(!found){
-          // Thử parse dạng khác
-          const cellMatch=text.match(/<td[^>]*class="[^"]*taxname[^"]*"[^>]*>\s*([^<]{5,}?)\s*<\/td>/i)
-            ||text.match(/Tên người nộp thuế[^<]*<\/td>\s*<td[^>]*>\s*([^<]{5,}?)\s*<\/td>/i);
-          if(cellMatch){const name=cellMatch[1].trim();if(name.length>3){setDonvi(name,'');found=true;}}
-        }
-      }
-    }catch(_){}
-  }
-
-  // ── API 5: masothue.com qua allorigins (cuối cùng) ──
-  if(!found){
-    try{
-      const targetUrl=`https://masothue.com/Search/SearchByTaxId?taxid=${mstObj.api}`;
-      const proxyUrl=`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
-      const r=await fetch(proxyUrl,{signal:AbortSignal.timeout(8000)});
-      if(r.ok){
-        const text=await r.text();
-        try{
-          const j=JSON.parse(text);
-          const name=j?.data?.[0]?.name||j?.[0]?.name||'';
-          if(name.length>3){setDonvi(name,'');found=true;}
-        }catch(_){
-          const patterns=[
-            /class="tax-name"[^>]*>\s*([^<]{5,})/i,
-            /property="og:title"\s+content="([^"]{5,})"/i,
-            /<h1[^>]*>([^<]{5,})<\/h1>/i,
-          ];
-          for(const pat of patterns){
-            const m=text.match(pat);
-            if(m){
-              let name=m[1].trim().replace(/^\d{10,13}\s*[-–]\s*/,'').replace(/\s*[|–-]\s*(masothue|tracuu).*/i,'').trim();
-              if(name.length>3){setDonvi(name,'');found=true;break;}
-            }
+    // API 3: tracuunnt qua allorigins (parse HTML bảng)
+    fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent('https://tracuunnt.gdt.gov.vn/tcnnt/mstdn.jsp?mst=' + code)}`, { signal })
+      .then(r => r.text())
+      .then(text => {
+        // Thử các pattern parse HTML của trang tracuunnt
+        const patterns = [
+          /<td[^>]*>\s*\d{10,13}\s*<\/td>\s*<td[^>]*>\s*([^<]{5,}?)\s*<\/td>/i,
+          /class="[^"]*taxname[^"]*"[^>]*>\s*([^<]{5,}?)\s*<\/td>/i,
+          /Tên người nộp thuế[^<]*<\/td>\s*<td[^>]*>\s*([^<]{5,}?)\s*<\/td>/i,
+        ];
+        for (const pat of patterns) {
+          const m = text.match(pat);
+          if (m) {
+            const name = m[1].trim();
+            if (isValid(name)) return { name, addr: '' };
           }
         }
+        return null;
+      }).catch(() => null),
+
+    // API 4: masothue.com qua allorigins
+    fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent('https://masothue.com/Search/SearchByTaxId?taxid=' + code)}`, { signal })
+      .then(r => r.text())
+      .then(text => {
+        // Thử parse JSON trước
+        try {
+          const j = JSON.parse(text);
+          const name = j?.data?.[0]?.name || j?.[0]?.name || '';
+          if (isValid(name)) return { name: name.trim(), addr: '' };
+        } catch (_) {}
+        // Rồi parse HTML
+        const patterns = [
+          /class="tax-name"[^>]*>\s*([^<]{5,})/i,
+          /property="og:title"\s+content="([^"]{5,})"/i,
+          /<h1[^>]*>([^<]{5,})<\/h1>/i,
+        ];
+        for (const pat of patterns) {
+          const m = text.match(pat);
+          if (m) {
+            let name = m[1].trim()
+              .replace(/^\d{10,13}\s*[-–]\s*/, '')
+              .replace(/\s*[|–-]\s*(masothue|tracuu).*/i, '')
+              .trim();
+            if (isValid(name)) return { name, addr: '' };
+          }
+        }
+        return null;
+      }).catch(() => null),
+  ];
+
+  // Chạy song song, lấy kết quả đầu tiên hợp lệ
+  const results = await Promise.allSettled(tasks);
+  for (const r of results) {
+    if (r.status === 'fulfilled' && r.value) return r.value;
+  }
+  return null;
+}
+
+async function traCuuMST() {
+  const rawMst = document.getElementById('inp-mst').value;
+  if (!rawMst.trim()) { toast('Nhập MST trước khi tra cứu', 'error'); return; }
+
+  const mstObj = normalizeMST(rawMst);
+  if (!mstObj) { toast('MST không hợp lệ — cần 10 số, 13 số, hoặc dạng 1234567890-001', 'error'); return; }
+
+  // 1. Tìm trong lịch sử trước (nhanh nhất, không cần mạng)
+  const seen = new Map();
+  records.forEach(r => {
+    if (!r.mst) return;
+    const rNorm = r.mst.replace(/-/g, '');
+    if (mstObj.candidates.some(c => rNorm === c || r.mst === rawMst.trim())) {
+      if (!seen.has(r.mst)) seen.set(r.mst, { name: r.donvi, addr: '' });
+    }
+  });
+  if (seen.size > 0) {
+    const first = [...seen.values()][0];
+    setDonvi(first.name, first.addr);
+    return;
+  }
+
+  const btn = document.getElementById('btn-tracuu');
+  btn.textContent = '⏳'; btn.disabled = true;
+  setStatus('Đang tra cứu...', 'loading');
+  document.getElementById('mst-suggest').style.display = 'none';
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 9000); // tổng timeout 9s
+  let found = false;
+
+  try {
+    // 2. Thử từng candidate code (13 số trước, rồi 10 số)
+    for (const code of mstObj.candidates) {
+      if (found) break;
+      const result = await tryLookupOneCode(code, controller.signal);
+      if (result) {
+        setDonvi(result.name, result.addr);
+        found = true;
       }
-    }catch(_){}
+    }
+  } catch (e) {
+    // AbortError hoặc lỗi khác — tiếp tục xuống fallback
+  } finally {
+    clearTimeout(timeout);
   }
 
-  // ── Fallback: mở popup ──
-  if(!found){
-    const statusEl=document.getElementById('mst-lookup-status');
-    statusEl.className='mst-status-warn';
-    statusEl.innerHTML=`⚠ Không tra tự động được &nbsp;<button onclick="openMstPopup('${mstObj.display}')" style="background:var(--accent);color:white;border:none;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:700">🔗 Mở tra cứu</button>`;
+  if (!found) {
+    const statusEl = document.getElementById('mst-lookup-status');
+    statusEl.className = 'mst-status-warn';
+    statusEl.innerHTML = `⚠ Không tự tra được &nbsp;<button onclick="openMstPopup('${mstObj.display}')" style="background:var(--accent);color:white;border:none;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:700">🔗 Mở tra cứu</button>`;
   }
 
-  btn.textContent='🔍';btn.disabled=false;
+  btn.textContent = '🔍'; btn.disabled = false;
 }
 
 function setDonvi(name,addr){
