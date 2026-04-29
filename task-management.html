@@ -414,63 +414,110 @@ tr:hover td{background:rgba(37,99,235,.04)}
 
 <!-- PAGE 4: BÁO CÁO -->
 <div class="page" id="page-baocao">
-  <div class="report-layout">
-    <div>
-      <div class="card">
-        <div class="card-title">Cấu hình báo cáo</div>
-        <div class="period-selector">
-          <label>Loại báo cáo</label>
-          <select id="rpt-loai" onchange="onReportTypeChange()">
-            <option value="tuan">Báo cáo tuần</option>
-            <option value="thang">Báo cáo tháng</option>
-          </select>
-          <div id="rpt-tuan-opts">
-            <label>Từ ngày</label>
-            <input type="date" id="rpt-from">
-            <label>Đến ngày</label>
-            <input type="date" id="rpt-to">
-            <label>Số tuần (VD: 18)</label>
-            <input type="text" id="rpt-sotuan" placeholder="18">
-          </div>
-          <div id="rpt-thang-opts" style="display:none">
-            <label>Tháng / Năm</label>
-            <input type="month" id="rpt-month">
-          </div>
-          <label>Kính gửi</label>
-          <input type="text" id="rpt-kinggui" value="Ban Giám đốc / Trưởng bộ phận">
-        </div>
-        <button class="btn btn-purple" style="width:100%;margin-top:4px" onclick="genReportPreview()">
-          ✦ Xem trước báo cáo
-        </button>
-        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-success btn-sm" onclick="exportDocx()">⬇ Xuất file .docx</button>
-        </div>
+
+  <!-- ── TOOLBAR ── -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+
+    <select id="rpt-loai" onchange="onReportTypeChange()"
+      style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-family:inherit;font-size:13px;outline:none;font-weight:600">
+      <option value="tuan">📅 Báo cáo tuần</option>
+      <option value="thang">🗓 Báo cáo tháng</option>
+    </select>
+
+    <div id="rpt-tuan-opts" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div style="display:flex;flex-direction:column;gap:3px">
+        <span style="font-size:10px;color:var(--text-dim);font-weight:700;text-transform:uppercase">Từ ngày</span>
+        <input type="date" id="rpt-from" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text);font-family:inherit;font-size:13px;outline:none">
       </div>
-      <div class="card section-gap">
-        <div class="card-title">IV. Đánh giá & Đề xuất</div>
-        <textarea class="textarea-report" id="rpt-iv" rows="5">- Thuận lợi: Quy trình hỗ trợ cơ bản được xử lý kịp thời.
+      <div style="display:flex;flex-direction:column;gap:3px">
+        <span style="font-size:10px;color:var(--text-dim);font-weight:700;text-transform:uppercase">Đến ngày</span>
+        <input type="date" id="rpt-to" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text);font-family:inherit;font-size:13px;outline:none">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:3px">
+        <span style="font-size:10px;color:var(--text-dim);font-weight:700;text-transform:uppercase">Số tuần</span>
+        <input type="text" id="rpt-sotuan" placeholder="VD: 18"
+          style="width:90px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text);font-family:inherit;font-size:13px;outline:none">
+      </div>
+    </div>
+
+    <div id="rpt-thang-opts" style="display:none;flex-direction:column;gap:3px">
+      <span style="font-size:10px;color:var(--text-dim);font-weight:700;text-transform:uppercase">Tháng / Năm</span>
+      <input type="month" id="rpt-month" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text);font-family:inherit;font-size:13px;outline:none">
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:200px">
+      <span style="font-size:10px;color:var(--text-dim);font-weight:700;text-transform:uppercase">Kính gửi</span>
+      <input type="text" id="rpt-kinggui" value="Ban Giám đốc / Trưởng bộ phận"
+        style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text);font-family:inherit;font-size:13px;outline:none;width:100%">
+    </div>
+
+    <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;margin-left:auto">
+      <div id="rpt-loading" style="display:none;align-items:center;gap:6px;font-size:12px;color:var(--text-muted)">
+        <div class="spinner"></div> Đang tổng hợp...
+      </div>
+      <button class="btn btn-purple" onclick="genReportPreview()" style="white-space:nowrap;padding:10px 20px">
+        ✦ Tạo báo cáo
+      </button>
+      <button class="btn btn-success btn-sm" onclick="exportDocx()" style="white-space:nowrap">
+        ⬇ Xuất .docx
+      </button>
+    </div>
+  </div>
+
+  <!-- ── NỘI DUNG CHÍNH ── -->
+  <div style="display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:start">
+
+    <!-- Cột trái: nhận xét + kế hoạch -->
+    <div style="display:flex;flex-direction:column;gap:12px">
+
+      <div class="card" style="padding:16px">
+        <div class="card-title" style="margin-bottom:10px">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          IV. Đánh giá &amp; Đề xuất
+        </div>
+        <textarea class="textarea-report" id="rpt-iv" rows="7" style="font-size:12.5px">- Thuận lợi: Quy trình hỗ trợ cơ bản được xử lý kịp thời.
 - Khó khăn: Một số thời điểm hệ thống BHXH phát sinh lỗi kéo dài thời gian xử lý.
 - Đề xuất: Tiếp tục theo dõi, cập nhật nghiệp vụ mới từ cơ quan thuế và BHXH.</textarea>
       </div>
-      <div class="card section-gap">
-        <div class="card-title">V. Kế hoạch tuần tiếp theo</div>
-        <textarea class="textarea-report" id="rpt-v" rows="5">- Duy trì hỗ trợ khách hàng về hóa đơn điện tử, BHXH và chữ ký số.
+
+      <div class="card" style="padding:16px">
+        <div class="card-title" style="margin-bottom:10px">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          V. Kế hoạch tiếp theo
+        </div>
+        <textarea class="textarea-report" id="rpt-v" rows="7" style="font-size:12.5px">- Duy trì hỗ trợ khách hàng về hóa đơn điện tử, BHXH và chữ ký số.
 - Theo dõi, kiểm tra và xử lý các lỗi phát sinh trên hệ thống.
 - Hỗ trợ nghiệp vụ cho bộ phận CSKH và khách hàng mới.</textarea>
       </div>
+
+      <!-- Gợi ý phím tắt nhỏ -->
+      <div style="background:rgba(37,99,235,.08);border:1px solid rgba(37,99,235,.2);border-radius:8px;padding:12px 14px;font-size:11px;color:var(--text-muted);line-height:1.8">
+        <div style="font-weight:700;color:var(--accent-light);margin-bottom:4px">💡 Hướng dẫn nhanh</div>
+        <div>1. Chọn loại báo cáo + khoảng thời gian</div>
+        <div>2. Nhấn <strong style="color:var(--purple)">✦ Tạo báo cáo</strong> → AI tự tổng hợp</div>
+        <div>3. Chỉnh sửa mục IV, V nếu cần</div>
+        <div>4. Nhấn <strong style="color:var(--green)">⬇ Xuất .docx</strong> để tải về</div>
+      </div>
     </div>
+
+    <!-- Cột phải: preview -->
     <div>
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;font-weight:700">
-        Xem trước báo cáo
-        <div id="rpt-loading" style="display:none;align-items:center;gap:6px;font-size:12px;color:var(--text-muted)"><div class="spinner"></div> Đang tổng hợp...</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.6px">
+          Xem trước báo cáo
+        </div>
+        <div id="rpt-preview-label" style="font-size:11px;color:var(--text-dim)"></div>
       </div>
-      <div class="report-preview" id="rpt-preview">
-        <p style="color:var(--text-dim);text-align:center;padding:60px 0">Nhấn <strong style="color:var(--purple)">"✦ Xem trước báo cáo"</strong> để tạo nội dung</p>
+      <div class="report-preview" id="rpt-preview" style="min-height:640px">
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:300px;gap:12px;color:var(--text-dim)">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".4"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          <p style="font-size:13px">Nhấn <strong style="color:var(--purple)">✦ Tạo báo cáo</strong> để tạo nội dung</p>
+        </div>
       </div>
     </div>
+
   </div>
 </div>
-
 </div>
 
 <!-- ═══════════════════════════════════ EDIT MODAL ═══════════════════════════════════ -->
@@ -792,6 +839,17 @@ async function saveEdit(){
 // ═══════════════════════════════════════════════
 document.addEventListener('keydown',e=>{
   if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();addRecord();}
+  const activeEl = document.activeElement;
+  const isTyping = activeEl && (activeEl.tagName==='TEXTAREA' || activeEl.tagName==='INPUT');
+  const onNhapPage = document.getElementById('page-nhap').classList.contains('active');
+  if(onNhapPage && !isTyping && !e.ctrlKey && !e.metaKey){
+  const dvMap={'1':['BHXH',0],'2':['HD',1],'3':['CKS',2],'4':['Khac',3]};
+  if(dvMap[e.key]){
+    e.preventDefault();
+    const [dv,idx]=dvMap[e.key];
+    selectDV(dv, document.querySelectorAll('#dv-pills .dv-pill')[idx]);
+  }
+}
   if(e.key==='Escape'){
     document.getElementById('noidung-suggest').style.display='none';
     document.getElementById('mst-suggest').style.display='none';
@@ -1445,7 +1503,24 @@ async function genReportPreview(){
   const dvGroups={};recs.forEach(r=>{if(!dvGroups[r.dichvu])dvGroups[r.dichvu]=[];if(r.noidung)dvGroups[r.dichvu].push(r.noidung);});
   const dvSummary=Object.entries(dvGroups).map(([dv,items])=>`${DV_LABELS[dv]}: ${[...new Set(items)].slice(0,4).join('; ')}`).join('\n');
 
-  const prompt=`Bạn là trợ lý viết báo cáo công việc kỹ thuật cho nhân viên tên Đông tại VISNAM.\n\nDữ liệu nội dung hỗ trợ theo dịch vụ:\n${dvSummary}\n\nHãy viết phần "III. CHI TIẾT CÁC HẠNG MỤC HỖ TRỢ" cho báo cáo.\nYêu cầu:\n- Nhóm theo: BHXH (Bảo hiểm xã hội điện tử), HĐ (Hóa đơn điện tử), CKS (Chữ ký số), Khác\n- Mỗi nhóm liệt kê các công việc bằng gạch đầu dòng, ngôn ngữ chuyên nghiệp\n- Tổng hợp và diễn đạt lại, ngắn gọn súc tích\n- Chỉ viết HTML với <h4>, <ul>, <li> — không markdown, không giải thích thêm`;
+  const noidungChiTiet = recs
+  .filter(r => r.noidung)
+  .map(r => `[${r.dichvu}] ${r.donvi}: ${r.noidung}`)
+  .join('\n');
+
+const prompt=`Bạn là chuyên gia viết báo cáo công việc kỹ thuật cho nhân viên Phan Duy Đông tại bộ phận Hỗ trợ Kỹ thuật, Công ty VISNAM (phần mềm BHXH, hóa đơn điện tử, chữ ký số).
+
+Dưới đây là TOÀN BỘ nội dung từng ca hỗ trợ trong kỳ:
+${noidungChiTiet || '(Không có ghi chú nội dung)'}
+
+Thống kê: Tổng ${total} ca | ${DV_LIST.filter(d=>totalDV[d]).map(d=>`${DV_LABELS[d]}: ${totalDV[d]}`).join(' | ')}
+
+Hãy viết phần "III. CHI TIẾT CÁC HẠNG MỤC HỖ TRỢ":
+1. Nhóm thành 4 mục: BHXH điện tử / Hóa đơn điện tử / Chữ ký số / Hỗ trợ khác
+2. Mỗi mục tóm tắt thành đầu việc cụ thể, súc tích, chuyên nghiệp — KHÔNG liệt kê thô từng dòng
+3. Dùng ngôn ngữ báo cáo trang trọng cấp cơ quan
+4. Bỏ qua mục nào không có dữ liệu
+5. Chỉ trả về HTML thuần với thẻ <h4> và <ul><li> — không markdown, không giải thích`;
 
   try{
     const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
