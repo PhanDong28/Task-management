@@ -1744,8 +1744,22 @@ async function exportDocx(){
         mkPara('II.A. TỔNG HỢP THEO DỊCH VỤ',true,26),
         new Table({width:{size:5000,type:WidthType.DXA},columnWidths:[2000,1500,1500],rows:[dvHeaderRow,...dvDataRows,dvTotalRow]}),
         new Paragraph({spacing:{before:160}}),
-        mkPara('III. CHI TIẾT CÁC HẠNG MỤC HỖ TRỢ',true,26),
-        mkPara('(Xem chi tiết theo từng dịch vụ trong bảng trên)',false,22),
+       mkPara('III. CHI TIẾT CÁC HẠNG MỤC HỖ TRỢ',true,26),
+        ...(() => {
+          const dvNames={BHXH:'Dịch vụ BHXH điện tử',HD:'Dịch vụ Hóa đơn điện tử',CKS:'Dịch vụ Chữ ký số',Khac:'Hỗ trợ nghiệp vụ khác'};
+          const dvGroups={};
+          recs.forEach(r=>{if(!dvGroups[r.dichvu])dvGroups[r.dichvu]=[];if(r.noidung)dvGroups[r.dichvu].push(r.noidung);});
+          const paras=[];
+          DV_LIST.filter(d=>dvGroups[d]&&dvGroups[d].length>0).forEach(d=>{
+            paras.push(new Paragraph({children:[new TextRun({text:dvNames[d]||d,bold:true,size:24,font:'Arial',color:'2563EB'})],spacing:{before:160,after:60}}));
+            const items=[...new Set(dvGroups[d])].filter(x=>x&&x.trim()).slice(0,8);
+            items.forEach(item=>{
+              paras.push(new Paragraph({numbering:{reference:'bullets',level:0},children:[new TextRun({text:item,size:24,font:'Arial'})]}));
+            });
+          });
+          if(!paras.length) paras.push(mkPara('(Không có ghi chú nội dung chi tiết)',false,22));
+          return paras;
+        })(),
         new Paragraph({spacing:{before:160}}),
         mkPara('IV. ĐÁNH GIÁ & ĐỀ XUẤT',true,26),
         ...ivItems,
