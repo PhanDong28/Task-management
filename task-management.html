@@ -6,7 +6,6 @@
 <title>Nhật Ký Công Việc – Phan Duy Đông</title>
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.5.0/docx.umd.min.js"></script>
-<!-- Firebase SDK -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import {
@@ -28,7 +27,6 @@
   const db = getFirestore(app);
   const colRef = collection(db, "records");
 
-  // Expose helpers to window so main script can call them
   window._fb = {
     async addRecord(data) {
       const docRef = await addDoc(colRef, { ...data, createdAt: serverTimestamp() });
@@ -46,7 +44,6 @@
     }
   };
 
-  // Signal that Firebase is ready
   window._fbReady = true;
   document.dispatchEvent(new Event("fbReady"));
 </script>
@@ -64,7 +61,6 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Be Vietnam Pro',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
 
-/* HEADER */
 header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;gap:16px;height:58px;position:sticky;top:0;z-index:100}
 .logo-area{display:flex;flex-direction:column;gap:1px}
 .logo{font-weight:800;font-size:15px;color:var(--accent-light);letter-spacing:-0.5px}
@@ -74,16 +70,13 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:0
 .nav-tab:hover{background:var(--surface2);color:var(--text)}
 .nav-tab.active{background:var(--accent);color:white}
 
-/* LAYOUT */
 .container{max-width:1300px;margin:0 auto;padding:24px}
 .page{display:none}.page.active{display:block}
 
-/* CARD */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
 .card-title{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:16px;display:flex;align-items:center;gap:8px}
 .section-gap{margin-top:20px}
 
-/* FORM */
 .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:14px}
 .form-group{display:flex;flex-direction:column;gap:5px}
 .form-group label{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px}
@@ -93,7 +86,6 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:0
 .form-group textarea{resize:vertical;min-height:70px}
 input[type="date"]{color-scheme:dark}
 
-/* SERVICE PILLS - nhập liệu nhanh */
 .dv-pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
 .dv-pill{padding:8px 20px;border-radius:8px;border:2px solid var(--border);background:var(--surface2);color:var(--text-muted);cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;transition:all .2s;letter-spacing:0.3px}
 .dv-pill:hover{border-color:var(--accent);color:var(--text)}
@@ -102,7 +94,6 @@ input[type="date"]{color-scheme:dark}
 .dv-pill.active-cks{border-color:var(--c-cks);background:rgba(168,85,247,.15);color:var(--c-cks)}
 .dv-pill.active-khac{border-color:var(--c-khac);background:rgba(139,148,158,.15);color:var(--text)}
 
-/* BUTTONS */
 .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:6px;border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;transition:all .2s}
 .btn-primary{background:var(--accent);color:white}.btn-primary:hover{background:#1d4ed8}
 .btn-success{background:var(--green);color:white}.btn-success:hover{background:#16a34a}
@@ -112,7 +103,6 @@ input[type="date"]{color-scheme:dark}
 .btn-sm{padding:5px 12px;font-size:12px}
 .btn-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 
-/* STATS */
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;position:relative;overflow:hidden}
 .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--c,var(--accent))}
@@ -120,7 +110,6 @@ input[type="date"]{color-scheme:dark}
 .stat-label{font-size:12px;color:var(--text-muted);font-weight:500}
 .stat-sub{font-size:11px;color:var(--text-dim);margin-top:6px;font-family:'JetBrains Mono',monospace}
 
-/* DỊCH VỤ BREAKDOWN BAR */
 .dv-breakdown{display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap}
 .dv-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
 .chip-bhxh{background:rgba(34,197,94,.15);color:var(--c-bhxh)}
@@ -128,7 +117,6 @@ input[type="date"]{color-scheme:dark}
 .chip-cks{background:rgba(168,85,247,.15);color:var(--c-cks)}
 .chip-khac{background:rgba(139,148,158,.15);color:var(--text-muted)}
 
-/* TABLE */
 .table-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border)}
 table{width:100%;border-collapse:collapse;font-size:13px}
 th{background:var(--surface2);padding:10px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.6px;white-space:nowrap;border-bottom:1px solid var(--border)}
@@ -137,38 +125,25 @@ tr:last-child td{border-bottom:none}
 tr:hover td{background:rgba(37,99,235,.04)}
 .mono{font-family:'JetBrains Mono',monospace;font-size:12px}
 
-/* BADGE */
 .badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:0.3px}
 .badge-hd{background:rgba(59,130,246,.2);color:#93c5fd}
 .badge-cks{background:rgba(168,85,247,.2);color:#c084fc}
 .badge-bhxh{background:rgba(34,197,94,.2);color:#4ade80}
 .badge-khac{background:rgba(139,148,158,.2);color:#9ca3af}
 
-/* FILTER */
 .filter-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
 .filter-bar input,.filter-bar select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 12px;color:var(--text);font-family:inherit;font-size:13px;outline:none;transition:border-color .2s}
 .filter-bar input:focus,.filter-bar select:focus{border-color:var(--accent)}
 
-/* PERIOD TABS */
 .period-tabs{display:flex;gap:4px;background:var(--surface2);padding:4px;border-radius:8px;width:fit-content;margin-bottom:20px}
 .period-tab{padding:6px 16px;border-radius:5px;border:none;background:transparent;color:var(--text-muted);cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;transition:all .2s}
 .period-tab.active{background:var(--accent);color:white}
 
-/* BAR CHART */
-.bar-chart{display:flex;gap:6px;align-items:flex-end;height:110px}
-.bar-group{display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;min-width:0}
-.bar{width:100%;border-radius:4px 4px 0 0;min-height:4px;transition:height .4s ease;opacity:.8}
-.bar:hover{opacity:1}
-.bar-label{font-size:10px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center}
-.bar-val{font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--text)}
-
-/* SERVICE BREAKDOWN TABLE for stats */
 .dv-stat-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
 .dv-stat-table td,.dv-stat-table th{padding:8px 12px;border-bottom:1px solid var(--surface2)}
 .dv-stat-table th{font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px}
 .dv-stat-table tr:last-child td{border-bottom:none;font-weight:700}
 
-/* REPORT */
 .report-layout{display:grid;grid-template-columns:300px 1fr;gap:20px;align-items:start}
 @media(max-width:900px){.report-layout{grid-template-columns:1fr}}
 .period-selector label{display:block;font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px}
@@ -192,11 +167,9 @@ tr:hover td{background:rgba(37,99,235,.04)}
 .textarea-report{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px;color:var(--text);font-family:inherit;font-size:13px;resize:vertical;outline:none;line-height:1.7}
 .textarea-report:focus{border-color:var(--accent)}
 
-/* spinner */
 .spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.2);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* toast */
 #toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 18px;font-size:13px;font-weight:600;box-shadow:var(--shadow);transform:translateY(80px);opacity:0;transition:all .3s;z-index:999;max-width:300px}
 #toast.show{transform:translateY(0);opacity:1}
 #toast.success{border-color:var(--green);color:var(--green)}
@@ -205,9 +178,11 @@ tr:hover td{background:rgba(37,99,235,.04)}
 .empty-state{text-align:center;padding:48px;color:var(--text-dim)}
 .empty-state p{font-size:14px}
 
-/* Ngày breakdown in report */
-.day-summary-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:6px 0;border-bottom:1px solid var(--surface2)}
-.day-summary-row:last-child{border-bottom:none}
+/* MST lookup status styles */
+.mst-status-loading{color:var(--yellow)}
+.mst-status-ok{color:var(--green)}
+.mst-status-warn{color:var(--orange)}
+.mst-status-error{color:var(--red)}
 </style>
 </head>
 <body>
@@ -228,12 +203,10 @@ tr:hover td{background:rgba(37,99,235,.04)}
 
 <div class="container">
 
-<!-- ══════════════════════ PAGE 1: NHẬP ══════════════════════ -->
+<!-- PAGE 1: NHẬP -->
 <div class="page active" id="page-nhap">
-
   <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start">
 
-    <!-- FORM NHẬP -->
     <div class="card">
       <div class="card-title" style="margin-bottom:12px">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
@@ -241,7 +214,7 @@ tr:hover td{background:rgba(37,99,235,.04)}
         <span style="margin-left:auto;font-size:10px;color:var(--text-dim);font-weight:400;text-transform:none">Tab/Enter để chuyển field · Ctrl+S để lưu</span>
       </div>
 
-      <!-- DỊCH VỤ - hàng đầu tiên, to rõ -->
+      <!-- DỊCH VỤ -->
       <div style="margin-bottom:14px">
         <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Dịch vụ hỗ trợ <span style="color:var(--red)">*</span></div>
         <div class="dv-pills" id="dv-pills">
@@ -253,16 +226,16 @@ tr:hover td{background:rgba(37,99,235,.04)}
         <input type="hidden" id="inp-dichvu" value="">
       </div>
 
-      <!-- HÀNG 1: MST + SĐT + Ngày giờ -->
+      <!-- MST + SĐT + Giờ -->
       <div style="display:grid;grid-template-columns:1fr 1fr 190px;gap:10px;margin-bottom:10px">
         <div class="form-group" style="position:relative">
           <label>MST <span style="color:var(--text-dim);font-weight:400;text-transform:none;font-size:10px">— nhập để tra cứu</span></label>
           <div style="display:flex;gap:6px;align-items:center">
             <input type="text" id="inp-mst" placeholder="0401234567" tabindex="5"
               oninput="onMstInput(this)" onkeydown="onMstKeydown(event)" autocomplete="off" style="flex:1">
-            <button type="button" id="btn-tracuu" onclick="traCuuMST()" tabindex="-1"
+            <button type="button" id="btn-tracuu" onclick="traCuuMST()"
               style="padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--accent-light);cursor:pointer;font-size:12px;white-space:nowrap;font-weight:700;transition:all .2s"
-              title="Tra cứu tên đơn vị theo MST từ cơ quan thuế">🔍</button>
+              title="Tra cứu tên đơn vị theo MST">🔍</button>
           </div>
           <div id="mst-suggest" style="display:none;position:absolute;left:0;z-index:300;background:var(--surface2);border:1px solid var(--accent);border-radius:6px;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.5);min-width:320px;top:100%"></div>
           <div id="mst-lookup-status" style="font-size:11px;margin-top:4px;min-height:16px"></div>
@@ -278,20 +251,19 @@ tr:hover td{background:rgba(37,99,235,.04)}
             <div id="clock-time" style="font-weight:700;font-size:15px"></div>
             <div id="clock-date" style="font-size:11px;color:var(--text-muted)"></div>
           </div>
-          <!-- hidden fields vẫn dùng để lưu -->
           <input type="hidden" id="inp-ngay">
           <input type="hidden" id="inp-gio">
         </div>
       </div>
 
-      <!-- HÀNG 2: Tên đơn vị full width -->
+      <!-- Tên đơn vị -->
       <div class="form-group" style="margin-bottom:10px;position:relative">
         <label>Tên đơn vị / Khách hàng <span style="color:var(--red)">*</span></label>
         <input type="text" id="inp-donvi" placeholder="Tên công ty / đơn vị" tabindex="8"
           onkeydown="fieldEnter(event,'inp-noidung')" autocomplete="off">
       </div>
 
-      <!-- HÀNG 3: Nội dung -->
+      <!-- Nội dung -->
       <div class="form-group" style="margin-bottom:12px;position:relative">
         <label>Nội dung hỗ trợ</label>
         <textarea id="inp-noidung" placeholder="Mô tả vấn đề và cách xử lý..." tabindex="9"
@@ -300,46 +272,33 @@ tr:hover td{background:rgba(37,99,235,.04)}
         <div id="noidung-suggest" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:200;background:var(--surface2);border:1px solid var(--accent);border-radius:0 0 6px 6px;max-height:180px;overflow-y:auto;box-shadow:0 6px 24px rgba(0,0,0,0.4)"></div>
       </div>
 
-      <!-- NÚT LƯU -->
+      <!-- Nút lưu -->
       <div style="display:flex;gap:8px;align-items:center">
         <button class="btn btn-primary" id="btn-save" onclick="addRecord()" tabindex="10" style="flex:1;justify-content:center;padding:11px">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           Lưu bản ghi
         </button>
-        <button class="btn btn-ghost" onclick="clearForm()" tabindex="11" style="padding:11px 16px" title="Xóa form (Esc)">✕ Xóa</button>
+        <button class="btn btn-ghost" onclick="clearForm()" tabindex="11" style="padding:11px 16px">✕ Xóa</button>
       </div>
 
-      <!-- Feedback dòng vừa lưu -->
       <div id="last-saved" style="display:none;margin-top:10px;padding:8px 12px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:6px;font-size:12px;color:var(--green)"></div>
     </div>
 
-    <!-- CỘT PHẢI: quick stats + lịch sử hôm nay -->
+    <!-- Cột phải -->
     <div style="display:flex;flex-direction:column;gap:12px">
-
-      <!-- Stats hôm nay -->
       <div class="card" style="padding:14px">
         <div class="card-title" style="margin-bottom:10px;font-size:10px">📊 NHANH</div>
         <div id="quick-stats-v2"></div>
       </div>
-
-      <!-- 5 dòng gần nhất hôm nay -->
       <div class="card" style="padding:14px" id="today-recent-card">
         <div class="card-title" style="margin-bottom:8px;font-size:10px">🕐 HÔM NAY GẦN ĐÂY</div>
         <div id="today-recent-list"></div>
       </div>
-
     </div>
-  </div>
-
-  <!-- Quick stats cũ (giữ để tương thích) -->
-  <div id="quick-stats" style="display:none"></div>
-  <div class="card section-gap" id="today-detail-card" style="display:none">
-    <div class="card-title">Chi tiết hôm nay theo dịch vụ</div>
-    <div id="today-dv-breakdown"></div>
   </div>
 </div>
 
-<!-- ══════════════════════ PAGE 2: BẢNG GHI ══════════════════════ -->
+<!-- PAGE 2: BẢNG GHI -->
 <div class="page" id="page-bang">
   <div class="filter-bar">
     <input type="date" id="f-from" onchange="renderTable()">
@@ -355,7 +314,7 @@ tr:hover td{background:rgba(37,99,235,.04)}
     <input type="text" id="f-search" placeholder="🔍 Tìm kiếm..." oninput="renderTable()" style="min-width:180px">
     <button class="btn btn-ghost btn-sm" onclick="clearFilters()">Xóa bộ lọc</button>
     <button class="btn btn-success btn-sm" onclick="exportCSV()">⬇ CSV</button>
-    <button class="btn btn-ghost btn-sm" onclick="copyTableToClipboard()" id="btn-copy-table" title="Copy bảng để dán vào Excel (giữ số 0 đầu)">📋 Copy Excel</button>
+    <button class="btn btn-ghost btn-sm" onclick="copyTableToClipboard()">📋 Copy Excel</button>
   </div>
 
   <div class="table-wrap">
@@ -384,16 +343,16 @@ tr:hover td{background:rgba(37,99,235,.04)}
   <div style="margin-top:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
     <div style="font-size:12px;color:var(--text-muted)" id="table-count"></div>
     <div id="pagination-controls" style="display:none;align-items:center;gap:6px">
-      <button class="btn btn-ghost btn-sm" id="pg-first" onclick="goPage(1)" title="Trang đầu">«</button>
+      <button class="btn btn-ghost btn-sm" id="pg-first" onclick="goPage(1)">«</button>
       <button class="btn btn-ghost btn-sm" id="pg-prev" onclick="goPage(currentPage-1)">‹ Trước</button>
       <span id="pg-info" style="font-size:12px;color:var(--text-muted);white-space:nowrap;padding:0 4px"></span>
       <button class="btn btn-ghost btn-sm" id="pg-next" onclick="goPage(currentPage+1)">Sau ›</button>
-      <button class="btn btn-ghost btn-sm" id="pg-last" onclick="goPage(totalPages)" title="Trang cuối">»</button>
+      <button class="btn btn-ghost btn-sm" id="pg-last" onclick="goPage(totalPages)">»</button>
     </div>
   </div>
 </div>
 
-<!-- ══════════════════════ PAGE 3: THỐNG KÊ ══════════════════════ -->
+<!-- PAGE 3: THỐNG KÊ -->
 <div class="page" id="page-thongke">
   <div class="period-tabs">
     <button class="period-tab active" onclick="setStatPeriod('day',this)">Hôm nay</button>
@@ -402,10 +361,8 @@ tr:hover td{background:rgba(37,99,235,.04)}
     <button class="period-tab" onclick="setStatPeriod('all',this)">Tất cả</button>
   </div>
 
-  <!-- KPI cards -->
   <div class="stats-grid" id="stat-cards"></div>
 
-  <!-- Hàng 1: Dịch vụ + Biểu đồ cột -->
   <div style="display:grid;grid-template-columns:260px 1fr;gap:16px;margin-bottom:16px">
     <div class="card">
       <div class="card-title">📊 Theo dịch vụ</div>
@@ -417,7 +374,6 @@ tr:hover td{background:rgba(37,99,235,.04)}
     </div>
   </div>
 
-  <!-- Hàng 2: Top khách hàng + Theo người làm -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
     <div class="card">
       <div class="card-title">🏆 Top khách hàng thường gặp</div>
@@ -429,17 +385,15 @@ tr:hover td{background:rgba(37,99,235,.04)}
     </div>
   </div>
 
-  <!-- Hàng 3: Chi tiết theo ngày dạng bảng -->
   <div class="card" id="chart-by-day-card">
     <div class="card-title">📋 Chi tiết theo ngày</div>
     <div id="chart-ngay-detail"></div>
   </div>
 </div>
 
-<!-- ══════════════════════ PAGE 4: BÁO CÁO ══════════════════════ -->
+<!-- PAGE 4: BÁO CÁO -->
 <div class="page" id="page-baocao">
   <div class="report-layout">
-    <!-- CỘT TRÁI: cấu hình -->
     <div>
       <div class="card">
         <div class="card-title">Cấu hình báo cáo</div>
@@ -449,7 +403,6 @@ tr:hover td{background:rgba(37,99,235,.04)}
             <option value="tuan">Báo cáo tuần</option>
             <option value="thang">Báo cáo tháng</option>
           </select>
-
           <div id="rpt-tuan-opts">
             <label>Từ ngày</label>
             <input type="date" id="rpt-from">
@@ -462,11 +415,9 @@ tr:hover td{background:rgba(37,99,235,.04)}
             <label>Tháng / Năm</label>
             <input type="month" id="rpt-month">
           </div>
-
           <label>Kính gửi</label>
           <input type="text" id="rpt-kinggui" value="Ban Giám đốc / Trưởng bộ phận">
         </div>
-
         <button class="btn btn-purple" style="width:100%;margin-top:4px" onclick="genReportPreview()">
           ✦ Xem trước báo cáo
         </button>
@@ -474,22 +425,19 @@ tr:hover td{background:rgba(37,99,235,.04)}
           <button class="btn btn-success btn-sm" onclick="exportDocx()">⬇ Xuất file .docx</button>
         </div>
       </div>
-
       <div class="card section-gap">
         <div class="card-title">IV. Đánh giá & Đề xuất</div>
-        <textarea class="textarea-report" id="rpt-iv" rows="5" placeholder="Nhập đánh giá...">- Thuận lợi: Quy trình hỗ trợ cơ bản được xử lý kịp thời.
+        <textarea class="textarea-report" id="rpt-iv" rows="5">- Thuận lợi: Quy trình hỗ trợ cơ bản được xử lý kịp thời.
 - Khó khăn: Một số thời điểm hệ thống BHXH phát sinh lỗi kéo dài thời gian xử lý.
 - Đề xuất: Tiếp tục theo dõi, cập nhật nghiệp vụ mới từ cơ quan thuế và BHXH.</textarea>
       </div>
       <div class="card section-gap">
         <div class="card-title">V. Kế hoạch tuần tiếp theo</div>
-        <textarea class="textarea-report" id="rpt-v" rows="5" placeholder="Nhập kế hoạch...">- Duy trì hỗ trợ khách hàng về hóa đơn điện tử, BHXH và chữ ký số.
+        <textarea class="textarea-report" id="rpt-v" rows="5">- Duy trì hỗ trợ khách hàng về hóa đơn điện tử, BHXH và chữ ký số.
 - Theo dõi, kiểm tra và xử lý các lỗi phát sinh trên hệ thống.
 - Hỗ trợ nghiệp vụ cho bộ phận CSKH và khách hàng mới.</textarea>
       </div>
     </div>
-
-    <!-- CỘT PHẢI: preview -->
     <div>
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;font-weight:700">
         Xem trước báo cáo
@@ -502,13 +450,13 @@ tr:hover td{background:rgba(37,99,235,.04)}
   </div>
 </div>
 
-</div><!-- /container -->
+</div>
 
 <div id="toast"></div>
 
 <script>
 // ═══════════════════════════════════════════════
-// DATA LAYER
+// CONSTANTS
 // ═══════════════════════════════════════════════
 const NOIDUNG_KEY = 'dong_kt_noidung_v1';
 const DV_LIST   = ['BHXH','HD','CKS','Khac'];
@@ -517,10 +465,12 @@ const DV_COLORS = {BHXH:'var(--c-bhxh)',HD:'var(--c-hd)',CKS:'var(--c-cks)',Khac
 const DV_CHIP   = {BHXH:'chip-bhxh',HD:'chip-hd',CKS:'chip-cks',Khac:'chip-khac'};
 const DV_BADGE  = {BHXH:'badge-bhxh',HD:'badge-hd',CKS:'badge-cks',Khac:'badge-khac'};
 
-// Firebase live sync — records luôn được cập nhật realtime
 let records = [];
 let _fbUnsubscribe = null;
 
+// ═══════════════════════════════════════════════
+// FIREBASE
+// ═══════════════════════════════════════════════
 function initFirebase() {
   if (!window._fb) { console.warn('Firebase chưa sẵn sàng'); return; }
   if (_fbUnsubscribe) _fbUnsubscribe();
@@ -534,30 +484,28 @@ function initFirebase() {
 }
 
 function showFbStatus(msg, type) {
-  let el = document.getElementById('fb-status');
+  const el = document.getElementById('fb-status');
   if (!el) return;
   el.textContent = msg;
   el.style.color = type === 'ok' ? 'var(--green)' : type === 'error' ? 'var(--red)' : 'var(--yellow)';
 }
+
+// ═══════════════════════════════════════════════
+// NỘI DUNG AUTOCOMPLETE
+// ═══════════════════════════════════════════════
 function loadNoidungList(){try{return JSON.parse(localStorage.getItem(NOIDUNG_KEY))||[];}catch{return[];}}
 function saveNoidung(text){
   if(!text||text.trim().length<3)return;
   const list=loadNoidungList();
   const trimmed=text.trim();
-  if(!list.includes(trimmed)){
-    list.unshift(trimmed);
-    if(list.length>100)list.pop();
-    localStorage.setItem(NOIDUNG_KEY,JSON.stringify(list));
-  }
+  if(!list.includes(trimmed)){list.unshift(trimmed);if(list.length>100)list.pop();localStorage.setItem(NOIDUNG_KEY,JSON.stringify(list));}
 }
 let noidungSuggestIdx=-1;
 function onNoidungInput(ta){
-  const val=ta.value;
-  const lastLine=val.split('\n').pop().toLowerCase().trim();
+  const val=ta.value;const lastLine=val.split('\n').pop().toLowerCase().trim();
   const box=document.getElementById('noidung-suggest');
   if(!lastLine){box.style.display='none';return;}
-  const list=loadNoidungList();
-  const matches=list.filter(s=>s.toLowerCase().includes(lastLine)).slice(0,8);
+  const matches=loadNoidungList().filter(s=>s.toLowerCase().includes(lastLine)).slice(0,8);
   if(!matches.length){box.style.display='none';return;}
   noidungSuggestIdx=-1;
   box.innerHTML=matches.map((m,i)=>`<div data-idx="${i}" style="padding:8px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--surface3);color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" onmousedown="pickNoidung(event,'${m.replace(/'/g,"&#39;")}')" onmouseenter="hlNoidung(${i})">${m}</div>`).join('');
@@ -572,28 +520,18 @@ function onNoidungKeydown(e){
   else if(e.key==='Enter'&&noidungSuggestIdx>=0){e.preventDefault();const sel=items[noidungSuggestIdx];if(sel)pickNoidung(null,sel.textContent);}
   else if(e.key==='Escape'){box.style.display='none';}
 }
-function hlNoidung(idx){
-  document.querySelectorAll('#noidung-suggest div').forEach((d,i)=>{
-    d.style.background=i===idx?'var(--accent-glow)':'';
-  });
-  noidungSuggestIdx=idx;
-}
+function hlNoidung(idx){document.querySelectorAll('#noidung-suggest div').forEach((d,i)=>{d.style.background=i===idx?'var(--accent-glow)':'';}); noidungSuggestIdx=idx;}
 function pickNoidung(e,text){
   if(e)e.preventDefault();
   const ta=document.getElementById('inp-noidung');
-  const lines=ta.value.split('\n');
-  lines[lines.length-1]=text;
-  ta.value=lines.join('\n');
-  document.getElementById('noidung-suggest').style.display='none';
-  ta.focus();
+  const lines=ta.value.split('\n');lines[lines.length-1]=text;ta.value=lines.join('\n');
+  document.getElementById('noidung-suggest').style.display='none';ta.focus();
 }
-
 
 // ═══════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded',()=>{
-  // Khởi đồng hồ realtime
   function tickClock(){
     const now=new Date();
     const hh=String(now.getHours()).padStart(2,'0');
@@ -605,12 +543,10 @@ document.addEventListener('DOMContentLoaded',()=>{
     const yr=now.getFullYear();
     document.getElementById('clock-time').textContent=`${hh}:${mm}:${ss}`;
     document.getElementById('clock-date').textContent=`${days[now.getDay()]} ${d}/${mo}/${yr}`;
-    // Cập nhật hidden fields
     document.getElementById('inp-ngay').value=now.toISOString().split('T')[0];
     document.getElementById('inp-gio').value=`${hh}:${mm}:${ss}`;
   }
-  tickClock();
-  setInterval(tickClock,1000);
+  tickClock(); setInterval(tickClock,1000);
 
   const mon=getMonday(new Date());
   const sun=new Date(mon);sun.setDate(sun.getDate()+6);
@@ -621,23 +557,12 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('rpt-to').value=sun.toISOString().split('T')[0];
   document.getElementById('rpt-month').value=today.slice(0,7);
 
-  // Firebase init — chờ module ES load xong
-  if (window._fbReady) {
-    initFirebase();
-  } else {
-    document.addEventListener('fbReady', () => initFirebase());
-  }
+  if (window._fbReady) initFirebase();
+  else document.addEventListener('fbReady', ()=>initFirebase());
 });
 
-function getMonday(d){
-  d=new Date(d);const day=d.getDay(),diff=d.getDate()-day+(day===0?-6:1);
-  d.setDate(diff);return d;
-}
-
-function getWeekOfMonth(d){
-  // Tuần 1 = ngày 1-7, Tuần 2 = 8-14, v.v. (theo ngày trong tháng)
-  return Math.ceil(d.getDate()/7);
-}
+function getMonday(d){d=new Date(d);const day=d.getDay(),diff=d.getDate()-day+(day===0?-6:1);d.setDate(diff);return d;}
+function getWeekOfMonth(d){return Math.ceil(d.getDate()/7);}
 
 // ═══════════════════════════════════════════════
 // NAVIGATION
@@ -646,36 +571,34 @@ function showPage(id,el){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
-  if(el) el.classList.add('active');
-  if(id==='bang') renderTable();
-  if(id==='thongke') renderStats('week');
-  if(id==='nhap') renderQuickStats();
+  if(el)el.classList.add('active');
+  if(id==='bang')renderTable();
+  if(id==='thongke')renderStats('week');
+  if(id==='nhap')renderQuickStats();
 }
 
 // ═══════════════════════════════════════════════
-// DV PILL SELECTOR
+// DV PILL
 // ═══════════════════════════════════════════════
-function selectDV(dv, el){
-  document.querySelectorAll('.dv-pill').forEach(p=>{
-    p.className='dv-pill';
-  });
+function selectDV(dv,el){
+  document.querySelectorAll('.dv-pill').forEach(p=>{p.className='dv-pill';});
   el.classList.add('active-'+dv.toLowerCase());
   document.getElementById('inp-dichvu').value=dv;
 }
 
 // ═══════════════════════════════════════════════
-// ADD RECORD
+// ADD / DELETE
 // ═══════════════════════════════════════════════
 async function addRecord(){
-  const ngay    =document.getElementById('inp-ngay').value;
-  const gio     =document.getElementById('inp-gio').value;
-  const dichvu  =document.getElementById('inp-dichvu').value;
-  const donvi   =document.getElementById('inp-donvi').value.trim();
-  const mst     =document.getElementById('inp-mst').value.trim();
-  const sdt     =document.getElementById('inp-sdt').value.trim();
-  const noidung =document.getElementById('inp-noidung').value.trim();
+  const ngay=document.getElementById('inp-ngay').value;
+  const gio=document.getElementById('inp-gio').value;
+  const dichvu=document.getElementById('inp-dichvu').value;
+  const donvi=document.getElementById('inp-donvi').value.trim();
+  const mst=document.getElementById('inp-mst').value.trim();
+  const sdt=document.getElementById('inp-sdt').value.trim();
+  const noidung=document.getElementById('inp-noidung').value.trim();
 
-  if(!dichvu){toast('Vui lòng chọn loại dịch vụ','error');document.getElementById('dv-pills').querySelector('.dv-pill').focus();return;}
+  if(!dichvu){toast('Vui lòng chọn loại dịch vụ','error');return;}
   if(!donvi){toast('Vui lòng nhập tên đơn vị','error');document.getElementById('inp-donvi').focus();return;}
 
   const btn=document.getElementById('btn-save');
@@ -683,75 +606,48 @@ async function addRecord(){
 
   try {
     await window._fb.addRecord({id:Date.now(),ngay,gio,dichvu,donvi,mst,sdt,noidung,nguoi:'Đông'});
-    if(noidung) saveNoidung(noidung);
-
+    if(noidung)saveNoidung(noidung);
     const fb=document.getElementById('last-saved');
-    if(fb){
-      fb.style.display='block';
-      fb.innerHTML=`✓ Đã lưu: <strong>${donvi}</strong> · ${DV_LABELS[dichvu]||dichvu}${noidung?' · '+noidung.slice(0,40):''}`;
-      setTimeout(()=>fb.style.display='none',4000);
-    }
+    if(fb){fb.style.display='block';fb.innerHTML=`✓ Đã lưu: <strong>${donvi}</strong> · ${DV_LABELS[dichvu]||dichvu}${noidung?' · '+noidung.slice(0,40):''}`;setTimeout(()=>fb.style.display='none',4000);}
     clearForm(true);
     toast('✓ Đã lưu lên Firebase!','success');
   } catch(err) {
-    console.error(err);
     toast('❌ Lỗi lưu: '+err.message,'error');
   } finally {
     btn.disabled=false;btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Lưu bản ghi';
   }
 }
 
-function clearForm(keepDate=false){
+function clearForm(){
   document.getElementById('inp-dichvu').value='';
   document.getElementById('inp-donvi').value='';
   document.getElementById('inp-mst').value='';
   document.getElementById('inp-sdt').value='';
   document.getElementById('inp-noidung').value='';
   document.getElementById('mst-lookup-status').textContent='';
+  document.getElementById('mst-lookup-status').className='';
   document.querySelectorAll('.dv-pill').forEach(p=>p.className='dv-pill');
 }
 
 async function deleteRecord(fbId){
   if(!confirm('Xóa bản ghi này?'))return;
-  try {
-    await window._fb.deleteRecord(fbId);
-    toast('Đã xóa','success');
-  } catch(err) {
-    toast('❌ Lỗi xóa: '+err.message,'error');
-  }
+  try{await window._fb.deleteRecord(fbId);toast('Đã xóa','success');}
+  catch(err){toast('❌ Lỗi xóa: '+err.message,'error');}
 }
 
 // ═══════════════════════════════════════════════
-// KEYBOARD SHORTCUTS & FIELD NAVIGATION
+// KEYBOARD
 // ═══════════════════════════════════════════════
 document.addEventListener('keydown',e=>{
   if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();addRecord();}
   if(e.key==='Escape'){document.getElementById('noidung-suggest').style.display='none';document.getElementById('mst-suggest').style.display='none';}
 });
-
-function fieldEnter(e,nextId){
-  if(e.key==='Enter'&&!e.shiftKey){
-    e.preventDefault();
-    const next=document.getElementById(nextId);
-    if(next)next.focus();
-  }
-}
+function fieldEnter(e,nextId){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();const next=document.getElementById(nextId);if(next)next.focus();}}
 
 // ═══════════════════════════════════════════════
-// MST AUTOCOMPLETE + TRA CỨU THUẾ
+// MST AUTOCOMPLETE (từ lịch sử)
 // ═══════════════════════════════════════════════
 let mstSuggestIdx=-1;
-
-// Chuẩn hoá MST: chấp nhận 0104648885-003, 0104648885003, 10 số, 13 số
-function normalizeMST(raw){
-  const cleaned=raw.trim().replace(/\s/g,'');
-  // Dạng có gạch ngang: 10-3
-  const dashMatch=cleaned.match(/^(\d{10})-(\d{3})$/);
-  if(dashMatch) return {display:cleaned, api:`${dashMatch[1]}${dashMatch[2]}`, raw:cleaned};
-  if(/^\d{13}$/.test(cleaned)) return {display:cleaned, api:cleaned, raw:cleaned};
-  if(/^\d{10}$/.test(cleaned)) return {display:cleaned, api:cleaned, raw:cleaned};
-  return null;
-}
 
 function onMstInput(inp){
   const val=inp.value.trim();
@@ -762,9 +658,7 @@ function onMstInput(inp){
   records.forEach(r=>{
     if(!r.mst)return;
     const rNorm=r.mst.replace(/-/g,'');
-    if((r.mst.includes(val)||rNorm.includes(valNorm))&&!seen.has(r.mst)){
-      seen.set(r.mst,{mst:r.mst,sdt:r.sdt,donvi:r.donvi});
-    }
+    if((r.mst.includes(val)||rNorm.includes(valNorm))&&!seen.has(r.mst))seen.set(r.mst,{mst:r.mst,sdt:r.sdt,donvi:r.donvi});
   });
   const matches=[...seen.values()].slice(0,6);
   if(!matches.length){box.style.display='none';return;}
@@ -781,12 +675,7 @@ function onMstInput(inp){
   box.style.width=Math.max(320,inp.offsetWidth)+'px';
 }
 
-function hlMst(idx){
-  document.querySelectorAll('#mst-suggest div[data-idx]').forEach((d,i)=>{
-    d.style.background=i===idx?'var(--accent-glow)':'';
-  });
-  mstSuggestIdx=idx;
-}
+function hlMst(idx){document.querySelectorAll('#mst-suggest div[data-idx]').forEach((d,i)=>{d.style.background=i===idx?'var(--accent-glow)':'';}); mstSuggestIdx=idx;}
 
 function onMstKeydown(e){
   const box=document.getElementById('mst-suggest');
@@ -800,163 +689,6 @@ function onMstKeydown(e){
   if(e.key==='Enter'){e.preventDefault();document.getElementById('inp-sdt').focus();}
 }
 
-async function traCuuMST(){
-  const rawMst=document.getElementById('inp-mst').value;
-  if(!rawMst.trim()){toast('Nhập MST trước khi tra cứu','error');return;}
-  const mstObj=normalizeMST(rawMst);
-  if(!mstObj){toast('MST không hợp lệ — cần 10 số, 13 số, hoặc dạng 1234567890-001','error');return;}
-
-  const mstApi=mstObj.api;
-  const mstDisplay=mstObj.display;
-  const statusEl=document.getElementById('mst-lookup-status');
-  const btn=document.getElementById('btn-tracuu');
-  btn.textContent='⏳';btn.disabled=true;
-  statusEl.style.color='var(--yellow)';statusEl.textContent='Đang tra cứu...';
-
-  let found=false;
-
-  // ── API 1: allorigins.win → masothue.com (CORS proxy đáng tin cậy) ──
-  if(!found){
-    try{
-      const targetUrl=`https://masothue.com/${mstDisplay}`;
-      const proxyUrl=`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
-      const r=await fetch(proxyUrl,{signal:AbortSignal.timeout(8000)});
-      if(r.ok){
-        const html=await r.text();
-        // Parse tên từ masothue.com HTML
-        const patterns=[
-          /class="tax-name"[^>]*>\s*([^<]{5,})/i,
-          /<h1[^>]*>\s*\d{10,13}[^<]*-\s*([^<]{5,})<\/h1>/i,
-          /<h1[^>]*>([^<]{5,})<\/h1>/i,
-          /property="og:title"\s+content="([^"]{5,})"/i,
-          /<title>([^<]{5,})<\/title>/i,
-        ];
-        for(const pat of patterns){
-          const m=html.match(pat);
-          if(m){
-            let name=m[1].trim();
-            // Loại bỏ prefix MST nếu có
-            name=name.replace(/^\d{10,13}\s*[-–]\s*/,'').trim();
-            // Bỏ " | masothue.com" hoặc tương tự
-            name=name.replace(/\s*[|–-]\s*(masothue|tracuu|thue).*/i,'').trim();
-            if(name.length>3 && !/^(tra cuu|search|home|index)/i.test(name)){
-              setDonvi(name,'',statusEl);found=true;break;
-            }
-          }
-        }
-      }
-    }catch(e){}
-  }
-
-  // ── API 2: corsproxy.io → masothue.com ──
-  if(!found){
-    try{
-      const targetUrl=`https://masothue.com/${mstDisplay}`;
-      const proxyUrl=`https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
-      const r=await fetch(proxyUrl,{signal:AbortSignal.timeout(8000)});
-      if(r.ok){
-        const html=await r.text();
-        const patterns=[
-          /class="tax-name"[^>]*>\s*([^<]{5,})/i,
-          /property="og:title"\s+content="([^"]{5,})"/i,
-          /<h1[^>]*>([^<]{5,})<\/h1>/i,
-        ];
-        for(const pat of patterns){
-          const m=html.match(pat);
-          if(m){
-            let name=m[1].trim().replace(/^\d{10,13}\s*[-–]\s*/,'').replace(/\s*[|–-]\s*(masothue|tracuu).*/i,'').trim();
-            if(name.length>3){setDonvi(name,'',statusEl);found=true;break;}
-          }
-        }
-      }
-    }catch(e){}
-  }
-
-  // ── API 3: allorigins → masothue JSON search endpoint ──
-  if(!found){
-    try{
-      const targetUrl=`https://masothue.com/Search/SearchByTaxId?taxid=${mstApi}`;
-      const proxyUrl=`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
-      const r=await fetch(proxyUrl,{signal:AbortSignal.timeout(6000)});
-      if(r.ok){
-        const text=await r.text();
-        try{
-          const j=JSON.parse(text);
-          const name=j?.data?.[0]?.name||j?.[0]?.name||j?.Name||'';
-          if(name.length>3){setDonvi(name,'',statusEl);found=true;}
-        }catch(_){
-          // fallback HTML parse
-          const m=text.match(/class="tax-name"[^>]*>([^<]+)/i);
-          if(m&&m[1].trim().length>3){setDonvi(m[1].trim(),'',statusEl);found=true;}
-        }
-      }
-    }catch(e){}
-  }
-
-  // ── API 4: thử MST dạng có gạch ngang riêng nếu là chi nhánh ──
-  if(!found&&mstObj.raw.includes('-')){
-    try{
-      // Thử với MST không có gạch (13 số liền)
-      const targetUrl=`https://masothue.com/${mstApi}`;
-      const proxyUrl=`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
-      const r=await fetch(proxyUrl,{signal:AbortSignal.timeout(6000)});
-      if(r.ok){
-        const html=await r.text();
-        const m=html.match(/class="tax-name"[^>]*>\s*([^<]{5,})/i)
-          ||html.match(/property="og:title"\s+content="([^"]{5,})"/i);
-        if(m){
-          let name=m[1].trim().replace(/^\d{10,13}\s*[-–]\s*/,'').trim();
-          if(name.length>3){setDonvi(name,'',statusEl);found=true;}
-        }
-      }
-    }catch(e){}
-  }
-
-  // ── Fallback: Mở popup nhúng masothue.com ──
-  if(!found){
-    statusEl.style.color='var(--orange)';
-    statusEl.innerHTML=`⚠ Không tự tra được · <button onclick="openMstPopup('${mstDisplay}')" style="background:var(--accent);color:white;border:none;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:700">🔗 Mở tra cứu</button>`;
-  }
-  btn.textContent='🔍';btn.disabled=false;
-}
-
-// Popup nhúng masothue.com để user có thể nhìn rồi copy tên
-function openMstPopup(mst){
-  // Tạo modal với iframe nhúng masothue.com
-  const existing=document.getElementById('mst-modal');
-  if(existing)existing.remove();
-
-  const modal=document.createElement('div');
-  modal.id='mst-modal';
-  modal.style.cssText=`position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:20px`;
-  modal.innerHTML=`
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;width:100%;max-width:860px;height:80vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.6)">
-      <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0">
-        <span style="font-size:13px;font-weight:700;color:var(--accent-light)">🔍 Tra cứu MST: ${mst}</span>
-        <span style="font-size:11px;color:var(--text-muted)">Tìm tên đơn vị → copy → đóng popup → paste vào ô tên</span>
-        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
-          <button onclick="document.getElementById('mst-modal').remove()" 
-            style="padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;font-size:13px;font-weight:700">✕ Đóng</button>
-        </div>
-      </div>
-      <iframe src="https://masothue.com/${mst}" 
-        style="flex:1;border:none;width:100%;background:white"
-        sandbox="allow-scripts allow-same-origin allow-forms allow-popups">
-      </iframe>
-    </div>`;
-  document.body.appendChild(modal);
-  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
-}
-
-function setDonvi(name, addr, statusEl){
-  document.getElementById('inp-donvi').value=name;
-  statusEl.style.color='var(--green)';
-  statusEl.textContent=`✓ ${name}${addr?' · '+addr.slice(0,60):''}`;
-  document.getElementById('mst-suggest').style.display='none';
-  document.getElementById('inp-sdt').focus();
-  toast('✓ Đã điền tên đơn vị!','success');
-}
-
 function fillFromMst(mst,sdt,donvi){
   document.getElementById('inp-mst').value=mst;
   if(sdt)document.getElementById('inp-sdt').value=sdt;
@@ -967,7 +699,186 @@ function fillFromMst(mst,sdt,donvi){
 }
 
 // ═══════════════════════════════════════════════
-// QUICK STATS V2 (sidebar nhập liệu)
+// TRA CỨU MST — ĐÃ SỬA
+// ═══════════════════════════════════════════════
+function normalizeMST(raw){
+  const cleaned=raw.trim().replace(/\s/g,'');
+  const dashMatch=cleaned.match(/^(\d{10})-(\d{3})$/);
+  if(dashMatch)return{display:cleaned,api:`${dashMatch[1]}${dashMatch[2]}`,short:dashMatch[1],raw:cleaned};
+  if(/^\d{13}$/.test(cleaned))return{display:cleaned,api:cleaned,short:cleaned.slice(0,10),raw:cleaned};
+  if(/^\d{10}$/.test(cleaned))return{display:cleaned,api:cleaned,short:cleaned,raw:cleaned};
+  return null;
+}
+
+function setStatus(msg, type){
+  const el=document.getElementById('mst-lookup-status');
+  el.textContent=msg;
+  el.className='mst-status-'+type;
+}
+
+async function traCuuMST(){
+  const rawMst=document.getElementById('inp-mst').value;
+  if(!rawMst.trim()){toast('Nhập MST trước khi tra cứu','error');return;}
+  const mstObj=normalizeMST(rawMst);
+  if(!mstObj){toast('MST không hợp lệ — cần 10 số, 13 số, hoặc dạng 1234567890-001','error');return;}
+
+  const btn=document.getElementById('btn-tracuu');
+  btn.textContent='⏳';btn.disabled=true;
+  setStatus('Đang tra cứu...','loading');
+  document.getElementById('mst-suggest').style.display='none';
+
+  let found=false;
+
+  // ── API 1: thuedientu.gdt.gov.vn (chính thức, JSON, thường không cần proxy) ──
+  if(!found){
+    try{
+      const urls=[
+        `https://thuedientu.gdt.gov.vn/etaxnnt/Request?func=PublicSynTaxCodeInfo&taxCode=${mstObj.api}&format=json`,
+        `https://thuedientu.gdt.gov.vn/etaxnnt/Request?func=PublicSynTaxCodeInfo&taxCode=${mstObj.short}&format=json`,
+      ];
+      for(const url of urls){
+        if(found)break;
+        try{
+          const r=await fetch(url,{signal:AbortSignal.timeout(7000)});
+          if(r.ok){
+            const j=await r.json();
+            // Response có thể là {data:{name,address,...}} hoặc {Name,...}
+            const name=j?.data?.name||j?.data?.Name||j?.Name||j?.name||'';
+            if(name&&name.length>3){
+              const addr=j?.data?.address||j?.data?.Address||'';
+              setDonvi(name,addr);found=true;
+            }
+          }
+        }catch(_){}
+      }
+    }catch(_){}
+  }
+
+  // ── API 2: api.vietqr.io/v2/business — miễn phí, JSON ──
+  if(!found){
+    try{
+      const r=await fetch(`https://api.vietqr.io/v2/business/${mstObj.api}`,{
+        signal:AbortSignal.timeout(6000),
+        headers:{'Accept':'application/json'}
+      });
+      if(r.ok){
+        const j=await r.json();
+        const name=j?.data?.name||j?.data?.businessName||'';
+        if(name&&name.length>3){
+          setDonvi(name,j?.data?.address||'');found=true;
+        }
+      }
+    }catch(_){}
+  }
+
+  // ── API 3: api-business.vietqr.io ──
+  if(!found){
+    try{
+      const r=await fetch(`https://api-business.vietqr.io/v1/business/info?taxCode=${mstObj.api}`,{
+        signal:AbortSignal.timeout(6000),
+        headers:{'Accept':'application/json','x-api-key':'vqr-free'}
+      });
+      if(r.ok){
+        const j=await r.json();
+        const name=j?.data?.name||j?.data?.companyName||j?.name||'';
+        if(name&&name.length>3){setDonvi(name,'');found=true;}
+      }
+    }catch(_){}
+  }
+
+  // ── API 4: tracuunnt.gdt.gov.vn CORS proxy qua allorigins ──
+  if(!found){
+    try{
+      const apiUrl=`https://tracuunnt.gdt.gov.vn/tcnnt/mstdn.jsp?mst=${mstObj.api}`;
+      const proxyUrl=`https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`;
+      const r=await fetch(proxyUrl,{signal:AbortSignal.timeout(8000)});
+      if(r.ok){
+        const text=await r.text();
+        // Parse tên từ bảng HTML của tracuunnt
+        const rowMatch=text.match(/<td[^>]*>\s*(\d{10,13})\s*<\/td>\s*<td[^>]*>\s*([^<]{5,}?)\s*<\/td>/i);
+        if(rowMatch&&rowMatch[2]){
+          const name=rowMatch[2].trim();
+          if(name.length>3&&!/^\d+$/.test(name)){setDonvi(name,'');found=true;}
+        }
+        if(!found){
+          // Thử parse dạng khác
+          const cellMatch=text.match(/<td[^>]*class="[^"]*taxname[^"]*"[^>]*>\s*([^<]{5,}?)\s*<\/td>/i)
+            ||text.match(/Tên người nộp thuế[^<]*<\/td>\s*<td[^>]*>\s*([^<]{5,}?)\s*<\/td>/i);
+          if(cellMatch){const name=cellMatch[1].trim();if(name.length>3){setDonvi(name,'');found=true;}}
+        }
+      }
+    }catch(_){}
+  }
+
+  // ── API 5: masothue.com qua allorigins (cuối cùng) ──
+  if(!found){
+    try{
+      const targetUrl=`https://masothue.com/Search/SearchByTaxId?taxid=${mstObj.api}`;
+      const proxyUrl=`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
+      const r=await fetch(proxyUrl,{signal:AbortSignal.timeout(8000)});
+      if(r.ok){
+        const text=await r.text();
+        try{
+          const j=JSON.parse(text);
+          const name=j?.data?.[0]?.name||j?.[0]?.name||'';
+          if(name.length>3){setDonvi(name,'');found=true;}
+        }catch(_){
+          const patterns=[
+            /class="tax-name"[^>]*>\s*([^<]{5,})/i,
+            /property="og:title"\s+content="([^"]{5,})"/i,
+            /<h1[^>]*>([^<]{5,})<\/h1>/i,
+          ];
+          for(const pat of patterns){
+            const m=text.match(pat);
+            if(m){
+              let name=m[1].trim().replace(/^\d{10,13}\s*[-–]\s*/,'').replace(/\s*[|–-]\s*(masothue|tracuu).*/i,'').trim();
+              if(name.length>3){setDonvi(name,'');found=true;break;}
+            }
+          }
+        }
+      }
+    }catch(_){}
+  }
+
+  // ── Fallback: mở popup ──
+  if(!found){
+    const statusEl=document.getElementById('mst-lookup-status');
+    statusEl.className='mst-status-warn';
+    statusEl.innerHTML=`⚠ Không tra tự động được &nbsp;<button onclick="openMstPopup('${mstObj.display}')" style="background:var(--accent);color:white;border:none;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:700">🔗 Mở tra cứu</button>`;
+  }
+
+  btn.textContent='🔍';btn.disabled=false;
+}
+
+function setDonvi(name,addr){
+  document.getElementById('inp-donvi').value=name;
+  const short=addr?name+' · '+addr.slice(0,60):name;
+  setStatus('✓ '+short,'ok');
+  document.getElementById('mst-suggest').style.display='none';
+  document.getElementById('inp-sdt').focus();
+  toast('✓ Đã điền tên đơn vị!','success');
+}
+
+function openMstPopup(mst){
+  const existing=document.getElementById('mst-modal');if(existing)existing.remove();
+  const modal=document.createElement('div');
+  modal.id='mst-modal';
+  modal.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML=`
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;width:100%;max-width:860px;height:80vh;display:flex;flex-direction:column;overflow:hidden">
+      <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0">
+        <span style="font-size:13px;font-weight:700;color:var(--accent-light)">🔍 Tra cứu MST: ${mst}</span>
+        <span style="font-size:11px;color:var(--text-muted)">Tìm tên đơn vị → copy → đóng popup → paste vào ô tên</span>
+        <button onclick="document.getElementById('mst-modal').remove()" style="margin-left:auto;padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;font-size:13px;font-weight:700">✕ Đóng</button>
+      </div>
+      <iframe src="https://masothue.com/${mst}" style="flex:1;border:none;width:100%;background:white" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+}
+
+// ═══════════════════════════════════════════════
+// QUICK STATS
 // ═══════════════════════════════════════════════
 function renderQuickStats(){
   const today=new Date().toISOString().split('T')[0];
@@ -978,7 +889,6 @@ function renderQuickStats(){
   const weekRecs=records.filter(r=>r.ngay>=mon&&r.ngay<=today);
   const monthRecs=records.filter(r=>r.ngay.startsWith(month));
 
-  // --- Sidebar stats v2 ---
   const v2=document.getElementById('quick-stats-v2');
   if(v2){
     const rows=[
@@ -994,12 +904,10 @@ function renderQuickStats(){
       </div>`).join('');
   }
 
-  // --- Lịch sử hôm nay (5 dòng gần nhất) ---
   const recentEl=document.getElementById('today-recent-list');
   if(recentEl){
-    if(!todayRecs.length){
-      recentEl.innerHTML='<p style="font-size:12px;color:var(--text-dim);padding:4px 0">Chưa có dữ liệu hôm nay</p>';
-    } else {
+    if(!todayRecs.length){recentEl.innerHTML='<p style="font-size:12px;color:var(--text-dim);padding:4px 0">Chưa có dữ liệu hôm nay</p>';}
+    else{
       recentEl.innerHTML=todayRecs.slice(0,5).map(r=>`
         <div style="padding:5px 0;border-bottom:1px solid var(--surface2);font-size:12px;display:flex;align-items:center;gap:6px">
           <span class="badge ${DV_BADGE[r.dichvu]||'badge-khac'}" style="font-size:10px;padding:2px 7px">${DV_LABELS[r.dichvu]||r.dichvu}</span>
@@ -1021,7 +929,7 @@ function getFiltered(){
     if(from&&r.ngay<from)return false;
     if(to&&r.ngay>to)return false;
     if(dv&&r.dichvu!==dv)return false;
-    if(search&&!(r.donvi.toLowerCase().includes(search)||r.mst.toLowerCase().includes(search)||r.sdt.includes(search)||r.noidung.toLowerCase().includes(search)))return false;
+    if(search&&!(r.donvi.toLowerCase().includes(search)||(r.mst||'').toLowerCase().includes(search)||(r.sdt||'').includes(search)||(r.noidung||'').toLowerCase().includes(search)))return false;
     return true;
   });
 }
@@ -1029,32 +937,22 @@ function getFiltered(){
 const PAGE_SIZE=30;
 let currentPage=1;
 let totalPages=1;
-let lastFilteredData=[];
 
 function renderTable(resetPage=true){
-  if(resetPage) currentPage=1;
+  if(resetPage)currentPage=1;
   const data=getFiltered();
-  lastFilteredData=data;
   const tbody=document.getElementById('table-body');
   const empty=document.getElementById('table-empty');
   const count=document.getElementById('table-count');
   const pgCtrl=document.getElementById('pagination-controls');
 
-  if(!data.length){
-    tbody.innerHTML='';
-    empty.style.display='block';
-    count.textContent='';
-    pgCtrl.style.display='none';
-    return;
-  }
+  if(!data.length){tbody.innerHTML='';empty.style.display='block';count.textContent='';pgCtrl.style.display='none';return;}
   empty.style.display='none';
 
   totalPages=Math.ceil(data.length/PAGE_SIZE);
   currentPage=Math.max(1,Math.min(currentPage,totalPages));
-
   const start=(currentPage-1)*PAGE_SIZE;
   const pageData=data.slice(start,start+PAGE_SIZE);
-
   count.textContent=`Hiển thị ${start+1}–${Math.min(start+PAGE_SIZE,data.length)} / ${data.length} bản ghi`;
 
   tbody.innerHTML=pageData.map((r,i)=>{
@@ -1065,12 +963,8 @@ function renderTable(resetPage=true){
     const noidungSafe=(r.noidung||'').replace(/"/g,'&quot;');
     const dvLabel=DV_LABELS[r.dichvu]||r.dichvu||'';
     const nguoiVal=r.nguoi||'Đông';
-    // Format ngày giờ
     let ngayHien='—';
-    if(r.ngay){
-      const parts=r.ngay.split('-');
-      ngayHien=`${parts[2]}/${parts[1]}/${parts[0]}`;
-    }
+    if(r.ngay){const parts=r.ngay.split('-');ngayHien=`${parts[2]}/${parts[1]}/${parts[0]}`;}
     const gioHien=r.gio?r.gio.slice(0,5):'';
     return `<tr>
       <td style="color:var(--text-dim)">${globalIdx+1}</td>
@@ -1084,12 +978,11 @@ function renderTable(resetPage=true){
       <td><span class="badge ${DV_BADGE[r.dichvu]||'badge-khac'}">${dvLabel}</span></td>
       <td class="mono">${nguoiVal}</td>
       <td style="max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text-muted)" title="${noidungSafe}">${r.noidung||'—'}</td>
-      <td><button class="btn btn-ghost btn-sm" style="padding:4px 8px;font-size:11px" onclick="copyRow('${mstSafe}','${sdtSafe}','${donviSafe}','${dvLabel}','${nguoiVal}','${noidungSafe.replace(/'/g,"&#39;")}')" title="Copy dòng này vào clipboard">📋</button></td>
+      <td><button class="btn btn-ghost btn-sm" style="padding:4px 8px;font-size:11px" onclick="copyRow('${mstSafe}','${sdtSafe}','${donviSafe}','${dvLabel}','${nguoiVal}','${noidungSafe.replace(/'/g,"&#39;")}')">📋</button></td>
       <td><button class="btn btn-danger btn-sm" onclick="deleteRecord('${r._fbId}')">Xóa</button></td>
     </tr>`;
   }).join('');
 
-  // Pagination UI
   if(totalPages>1){
     pgCtrl.style.display='flex';
     document.getElementById('pg-info').textContent=`Trang ${currentPage} / ${totalPages}`;
@@ -1097,82 +990,41 @@ function renderTable(resetPage=true){
     document.getElementById('pg-prev').disabled=currentPage===1;
     document.getElementById('pg-next').disabled=currentPage===totalPages;
     document.getElementById('pg-last').disabled=currentPage===totalPages;
-  } else {
-    pgCtrl.style.display='none';
-  }
+  }else{pgCtrl.style.display='none';}
 }
 
-function goPage(p){
-  currentPage=p;
-  renderTable(false);
-  document.getElementById('page-bang').scrollIntoView({behavior:'smooth',block:'start'});
-}
-
+function goPage(p){currentPage=p;renderTable(false);document.getElementById('page-bang').scrollIntoView({behavior:'smooth',block:'start'});}
 function copyRow(mst,sdt,donvi,dv,nguoi,noidung){
-  // Copy tab-separated, Excel tự nhận dạng số nếu format ô là Text
-  const parts=[mst||'',sdt||'',donvi||'',dv||'',nguoi||'',noidung||''];
-  const text=parts.join('\t');
-  navigator.clipboard.writeText(text).then(()=>{
-    toast('✓ Đã copy! Dán vào Excel bằng Ctrl+V','success');
-  }).catch(()=>{
-    const ta=document.createElement('textarea');
-    ta.value=text;document.body.appendChild(ta);ta.select();
-    document.execCommand('copy');document.body.removeChild(ta);
-    toast('✓ Đã copy dòng!','success');
+  const text=[mst||'',sdt||'',donvi||'',dv||'',nguoi||'',noidung||''].join('\t');
+  navigator.clipboard.writeText(text).then(()=>toast('✓ Đã copy! Dán vào Excel bằng Ctrl+V','success')).catch(()=>{
+    const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('✓ Đã copy dòng!','success');
   });
 }
-
-function clearFilters(){
-  document.getElementById('f-from').value='';
-  document.getElementById('f-to').value='';
-  document.getElementById('f-dv').value='';
-  document.getElementById('f-search').value='';
-  renderTable();
-}
-
+function clearFilters(){document.getElementById('f-from').value='';document.getElementById('f-to').value='';document.getElementById('f-dv').value='';document.getElementById('f-search').value='';renderTable();}
 function exportCSV(){
-  const data=getFiltered();
-  if(!data.length){toast('Không có dữ liệu','error');return;}
+  const data=getFiltered();if(!data.length){toast('Không có dữ liệu','error');return;}
   const header='Ngày,Dịch vụ,Tên đơn vị,MST,SĐT,Nội dung';
   const rows=data.map(r=>[r.ngay,r.dichvu,`"${r.donvi}"`,r.mst,r.sdt,`"${r.noidung}"`].join(','));
   const csv='\uFEFF'+[header,...rows].join('\n');
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
   const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;
-  a.download=`Dong_KyThuat_${new Date().toISOString().split('T')[0]}.csv`;
-  a.click();URL.revokeObjectURL(url);
+  const a=document.createElement('a');a.href=url;a.download=`Dong_KyThuat_${new Date().toISOString().split('T')[0]}.csv`;a.click();URL.revokeObjectURL(url);
 }
-
 function copyTableToClipboard(){
-  const data=getFiltered();
-  if(!data.length){toast('Không có dữ liệu','error');return;}
+  const data=getFiltered();if(!data.length){toast('Không có dữ liệu','error');return;}
   const header=['MST','SĐT','Tên đơn vị','Dịch vụ','Người làm','Nội dung'].join('\t');
-  const rows=data.map(r=>[
-    r.mst||'',r.sdt||'',r.donvi||'',
-    DV_LABELS[r.dichvu]||r.dichvu||'',
-    r.nguoi||'Đông',r.noidung||''
-  ].join('\t'));
+  const rows=data.map(r=>[r.mst||'',r.sdt||'',r.donvi||'',DV_LABELS[r.dichvu]||r.dichvu||'',r.nguoi||'Đông',r.noidung||''].join('\t'));
   const text=[header,...rows].join('\n');
-  navigator.clipboard.writeText(text).then(()=>{
-    toast('✓ Đã copy! Dán vào Excel bằng Ctrl+V','success');
-  }).catch(()=>{
-    const ta=document.createElement('textarea');
-    ta.value=text;document.body.appendChild(ta);ta.select();
-    document.execCommand('copy');document.body.removeChild(ta);
-    toast('✓ Đã copy! Dán vào Excel bằng Ctrl+V','success');
+  navigator.clipboard.writeText(text).then(()=>toast('✓ Đã copy! Dán vào Excel bằng Ctrl+V','success')).catch(()=>{
+    const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('✓ Đã copy!','success');
   });
 }
 
 // ═══════════════════════════════════════════════
-// STATS PAGE
+// STATS
 // ═══════════════════════════════════════════════
 let statPeriod='week';
-function setStatPeriod(p,el){
-  statPeriod=p;
-  document.querySelectorAll('.period-tab').forEach(t=>t.classList.remove('active'));
-  el.classList.add('active');
-  renderStats(p);
-}
+function setStatPeriod(p,el){statPeriod=p;document.querySelectorAll('.period-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderStats(p);}
 
 function getStatData(period){
   const today=new Date().toISOString().split('T')[0];
@@ -1191,12 +1043,9 @@ function renderStats(period){
   const dvCnt={};data.forEach(r=>{dvCnt[r.dichvu]=(dvCnt[r.dichvu]||0)+1;});
   const total=data.length;
 
-  // ── KPI cards ──
-  const el=document.getElementById('stat-cards');
-  el.innerHTML=`
+  document.getElementById('stat-cards').innerHTML=`
     <div class="stat-card" style="--c:var(--accent)">
-      <div class="stat-value">${total}</div>
-      <div class="stat-label">Tổng hỗ trợ</div>
+      <div class="stat-value">${total}</div><div class="stat-label">Tổng hỗ trợ</div>
     </div>
     ${DV_LIST.map(d=>`
       <div class="stat-card" style="--c:${DV_COLORS[d]}">
@@ -1205,7 +1054,6 @@ function renderStats(period){
         <div class="stat-sub">${total?Math.round((dvCnt[d]||0)/total*100):0}%</div>
       </div>`).join('')}`;
 
-  // ── Bảng dịch vụ ──
   const dvEl=document.getElementById('dv-stat-detail');
   dvEl.innerHTML=`<table class="dv-stat-table">
     <tr><th>DV</th><th style="text-align:right">SL</th><th style="text-align:right">%</th></tr>
@@ -1227,7 +1075,6 @@ function renderStats(period){
     <tr style="border-top:1px solid var(--border)"><td><strong>Tổng</strong></td><td style="text-align:right;font-weight:800;font-family:'JetBrains Mono',monospace"><strong>${total}</strong></td><td></td></tr>
   </table>`;
 
-  // ── Biểu đồ cột SVG ──
   const dayCnt={};
   data.forEach(r=>{
     if(!dayCnt[r.ngay])dayCnt[r.ngay]={total:0};
@@ -1236,9 +1083,8 @@ function renderStats(period){
   });
   const sortedDays=Object.keys(dayCnt).sort();
   const barEl=document.getElementById('bar-chart-container');
-  if(!sortedDays.length){
-    barEl.innerHTML='<p style="color:var(--text-dim);font-size:12px;padding:16px">Không có dữ liệu</p>';
-  } else {
+  if(!sortedDays.length){barEl.innerHTML='<p style="color:var(--text-dim);font-size:12px;padding:16px">Không có dữ liệu</p>';}
+  else{
     const maxV=Math.max(...sortedDays.map(d=>dayCnt[d].total),1);
     const bw=32,gap=8,ph=120,lh=20,pad=8;
     const svgW=Math.max(sortedDays.length*(bw+gap)+pad*2,400);
@@ -1247,17 +1093,14 @@ function renderStats(period){
       const x=pad+i*(bw+gap);
       let y=ph;
       const segs=DV_LIST.filter(dv=>obj[dv]).map(dv=>{
-        const h=Math.round(obj[dv]/maxV*ph);
-        y-=h;
-        return `<rect x="${x}" y="${y}" width="${bw}" height="${h}" fill="${DV_COLORS[dv]}" rx="2" opacity=".85">
-          <title>${DV_LABELS[dv]}: ${obj[dv]}</title></rect>`;
+        const h=Math.round(obj[dv]/maxV*ph);y-=h;
+        return `<rect x="${x}" y="${y}" width="${bw}" height="${h}" fill="${DV_COLORS[dv]}" rx="2" opacity=".85"><title>${DV_LABELS[dv]}: ${obj[dv]}</title></rect>`;
       }).reverse().join('');
       const [,mm,dd]=d.split('-');
       return `${segs}
         <text x="${x+bw/2}" y="${ph+14}" text-anchor="middle" fill="var(--text-muted)" font-size="10">${dd}/${mm}</text>
         <text x="${x+bw/2}" y="${Math.max(y-4,4)}" text-anchor="middle" fill="var(--text)" font-size="11" font-weight="700">${tot}</text>`;
     }).join('');
-    // Legend
     const legend=DV_LIST.map((d,i)=>`
       <rect x="${i*80}" y="0" width="10" height="10" fill="${DV_COLORS[d]}" rx="2"/>
       <text x="${i*80+14}" y="9" fill="var(--text-muted)" font-size="11">${DV_LABELS[d]}</text>`).join('');
@@ -1267,9 +1110,7 @@ function renderStats(period){
     </svg>`;
   }
 
-  // ── Top khách hàng ──
-  const custCnt={};
-  data.forEach(r=>{if(r.donvi)custCnt[r.donvi]=(custCnt[r.donvi]||0)+1;});
+  const custCnt={};data.forEach(r=>{if(r.donvi)custCnt[r.donvi]=(custCnt[r.donvi]||0)+1;});
   const topCust=Object.entries(custCnt).sort((a,b)=>b[1]-a[1]).slice(0,8);
   const topEl=document.getElementById('top-customers');
   if(!topCust.length){topEl.innerHTML='<p style="color:var(--text-dim);font-size:12px">Không có dữ liệu</p>';}
@@ -1286,21 +1127,14 @@ function renderStats(period){
       </div>`).join('');
   }
 
-  // ── Theo người làm ──
-  const personCnt={};
-  data.forEach(r=>{const p=r.nguoi||'Đông';personCnt[p]=(personCnt[p]||0)+1;});
+  const personCnt={};data.forEach(r=>{const p=r.nguoi||'Đông';personCnt[p]=(personCnt[p]||0)+1;});
   const byPersonEl=document.getElementById('by-person');
   const persons=Object.entries(personCnt).sort((a,b)=>b[1]-a[1]);
   if(!persons.length){byPersonEl.innerHTML='<p style="color:var(--text-dim);font-size:12px">Không có dữ liệu</p>';}
   else{
     const maxP=persons[0][1];
-    // Breakdown dịch vụ của từng người
     const personDV={};
-    data.forEach(r=>{
-      const p=r.nguoi||'Đông';
-      if(!personDV[p])personDV[p]={};
-      personDV[p][r.dichvu]=(personDV[p][r.dichvu]||0)+1;
-    });
+    data.forEach(r=>{const p=r.nguoi||'Đông';if(!personDV[p])personDV[p]={};personDV[p][r.dichvu]=(personDV[p][r.dichvu]||0)+1;});
     byPersonEl.innerHTML=persons.map(([name,cnt])=>{
       const dvChips=DV_LIST.filter(d=>personDV[name]?.[d]).map(d=>`<span class="dv-chip ${DV_CHIP[d]}">${DV_LABELS[d]} ${personDV[name][d]}</span>`).join('');
       return `<div style="padding:8px 0;border-bottom:1px solid var(--surface2)">
@@ -1318,7 +1152,6 @@ function renderStats(period){
     }).join('');
   }
 
-  // ── Bảng chi tiết theo ngày ──
   const ngayEl=document.getElementById('chart-ngay-detail');
   if(!sortedDays.length){ngayEl.innerHTML='<p style="color:var(--text-dim);font-size:12px;padding:16px">Không có dữ liệu</p>';return;}
   ngayEl.innerHTML=`
@@ -1337,8 +1170,7 @@ function renderStats(period){
         </thead>
         <tbody>
           ${sortedDays.map(d=>{
-            const obj=dayCnt[d];
-            const dtot=obj.total;
+            const obj=dayCnt[d];const dtot=obj.total;
             const [,mm,dd]=d.split('-');
             const chips=DV_LIST.filter(dv=>obj[dv]).map(dv=>`<span style="display:inline-block;width:${Math.round(obj[dv]/dtot*100)}%;min-width:4px;height:8px;background:${DV_COLORS[dv]};border-radius:2px" title="${DV_LABELS[dv]}: ${obj[dv]}"></span>`).join('');
             const thu=['CN','T2','T3','T4','T5','T6','T7'][new Date(d).getDay()];
@@ -1376,67 +1208,32 @@ function onReportTypeChange(){
 
 function getReportRecords(){
   const type=document.getElementById('rpt-loai').value;
-  if(type==='tuan'){
-    const from=document.getElementById('rpt-from').value;
-    const to=document.getElementById('rpt-to').value;
-    return records.filter(r=>r.ngay>=from&&r.ngay<=to);
-  }else{
-    const month=document.getElementById('rpt-month').value;
-    return records.filter(r=>r.ngay.startsWith(month));
-  }
+  if(type==='tuan'){const from=document.getElementById('rpt-from').value;const to=document.getElementById('rpt-to').value;return records.filter(r=>r.ngay>=from&&r.ngay<=to);}
+  else{const month=document.getElementById('rpt-month').value;return records.filter(r=>r.ngay.startsWith(month));}
 }
 
 async function genReportPreview(){
   const recs=getReportRecords();
   if(!recs.length){toast('Không có dữ liệu trong khoảng thời gian này','error');return;}
-
   const loading=document.getElementById('rpt-loading');
   const preview=document.getElementById('rpt-preview');
   loading.style.display='flex';
   preview.innerHTML='<p style="color:var(--text-dim);text-align:center;padding:60px 0">Đang tạo...</p>';
 
-  // Thống kê theo ngày
   const dayCnt={};
-  recs.forEach(r=>{
-    if(!dayCnt[r.ngay])dayCnt[r.ngay]={total:0};
-    dayCnt[r.ngay].total++;
-    dayCnt[r.ngay][r.dichvu]=(dayCnt[r.ngay][r.dichvu]||0)+1;
-  });
-
-  // Thống kê tổng theo dịch vụ
-  const totalDV={};
-  recs.forEach(r=>{totalDV[r.dichvu]=(totalDV[r.dichvu]||0)+1;});
-
-  // Nội dung hỗ trợ theo dịch vụ (để AI tổng hợp)
-  const dvGroups={};
-  recs.forEach(r=>{if(!dvGroups[r.dichvu])dvGroups[r.dichvu]=[];if(r.noidung)dvGroups[r.dichvu].push(r.noidung);});
-
+  recs.forEach(r=>{if(!dayCnt[r.ngay])dayCnt[r.ngay]={total:0};dayCnt[r.ngay].total++;dayCnt[r.ngay][r.dichvu]=(dayCnt[r.ngay][r.dichvu]||0)+1;});
+  const totalDV={};recs.forEach(r=>{totalDV[r.dichvu]=(totalDV[r.dichvu]||0)+1;});
+  const dvGroups={};recs.forEach(r=>{if(!dvGroups[r.dichvu])dvGroups[r.dichvu]=[];if(r.noidung)dvGroups[r.dichvu].push(r.noidung);});
   const dvSummary=Object.entries(dvGroups).map(([dv,items])=>`${DV_LABELS[dv]}: ${[...new Set(items)].slice(0,4).join('; ')}`).join('\n');
 
-  const prompt=`Bạn là trợ lý viết báo cáo công việc kỹ thuật cho nhân viên tên Đông tại VISNAM.
-
-Dữ liệu nội dung hỗ trợ theo dịch vụ:
-${dvSummary}
-
-Hãy viết phần "III. CHI TIẾT CÁC HẠNG MỤC HỖ TRỢ" cho báo cáo.
-Yêu cầu:
-- Nhóm theo: BHXH (Bảo hiểm xã hội điện tử), HĐ (Hóa đơn điện tử), CKS (Chữ ký số), Khác
-- Mỗi nhóm liệt kê các công việc bằng gạch đầu dòng, ngôn ngữ chuyên nghiệp
-- Tổng hợp và diễn đạt lại, ngắn gọn súc tích
-- Chỉ viết HTML với <h4>, <ul>, <li> — không markdown, không giải thích thêm`;
+  const prompt=`Bạn là trợ lý viết báo cáo công việc kỹ thuật cho nhân viên tên Đông tại VISNAM.\n\nDữ liệu nội dung hỗ trợ theo dịch vụ:\n${dvSummary}\n\nHãy viết phần "III. CHI TIẾT CÁC HẠNG MỤC HỖ TRỢ" cho báo cáo.\nYêu cầu:\n- Nhóm theo: BHXH (Bảo hiểm xã hội điện tử), HĐ (Hóa đơn điện tử), CKS (Chữ ký số), Khác\n- Mỗi nhóm liệt kê các công việc bằng gạch đầu dòng, ngôn ngữ chuyên nghiệp\n- Tổng hợp và diễn đạt lại, ngắn gọn súc tích\n- Chỉ viết HTML với <h4>, <ul>, <li> — không markdown, không giải thích thêm`;
 
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})
-    });
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
     const d=await res.json();
     const aiText=d.content?.[0]?.text||'';
     buildPreview(recs,dayCnt,totalDV,aiText);
-  }catch(e){
-    buildPreview(recs,dayCnt,totalDV,genFallbackSection3(dvGroups));
-  }
+  }catch(e){buildPreview(recs,dayCnt,totalDV,genFallbackSection3(dvGroups));}
   loading.style.display='none';
 }
 
@@ -1458,90 +1255,43 @@ function buildPreview(recs,dayCnt,totalDV,section3Html){
 
   let fromDate,toDate,tieude;
   if(type==='tuan'){
-    fromDate=document.getElementById('rpt-from').value;
-    toDate=document.getElementById('rpt-to').value;
+    fromDate=document.getElementById('rpt-from').value;toDate=document.getElementById('rpt-to').value;
     const m=toDate.slice(5,7),y=toDate.slice(0,4);
     tieude=`BÁO CÁO CÔNG VIỆC TUẦN ${sotuan||'??'} – THÁNG ${m}/${y}`;
   }else{
-    const month=document.getElementById('rpt-month').value;
-    fromDate=month+'-01';toDate=month+'-31';
+    const month=document.getElementById('rpt-month').value;fromDate=month+'-01';toDate=month+'-31';
     tieude=`BÁO CÁO CÔNG VIỆC THÁNG ${month.slice(5,7)}/${month.slice(0,4)}`;
   }
 
   const today=new Date();
   const ngayBaoCao=`${today.getDate()}/${String(today.getMonth()+1).padStart(2,'0')}/${today.getFullYear()}`;
 
-  // Bảng II: mỗi ngày có tổng + breakdown (cho báo cáo tuần)
-  // Với báo cáo tháng: nhóm theo tuần
   let tableSection2='';
   if(type==='thang'){
-    // Nhóm dữ liệu theo tuần trong tháng
     const weekGroups={};
-    recs.forEach(r=>{
-      const d=new Date(r.ngay);
-      const weekNum=getWeekOfMonth(d);
-      const wk=`Tuần ${weekNum}`;
-      if(!weekGroups[wk])weekGroups[wk]={days:new Set(),dayCnt:{},total:0};
-      weekGroups[wk].days.add(r.ngay);
-      weekGroups[wk].total++;
-      weekGroups[wk].dayCnt[r.dichvu]=(weekGroups[wk].dayCnt[r.dichvu]||0)+1;
-    });
-    // Tính ngày đầu/cuối mỗi tuần
-    const weekRows=Object.entries(weekGroups).sort((a,b)=>a[0].localeCompare(b[0])).map(([wk,obj])=>{
+    recs.forEach(r=>{const d=new Date(r.ngay);const wk=`Tuần ${getWeekOfMonth(d)}`;if(!weekGroups[wk])weekGroups[wk]={days:new Set(),dayCnt:{},total:0};weekGroups[wk].days.add(r.ngay);weekGroups[wk].total++;weekGroups[wk].dayCnt[r.dichvu]=(weekGroups[wk].dayCnt[r.dichvu]||0)+1;});
+    const weekRows=Object.entries(weekGroups).sort().map(([wk,obj])=>{
       const sortedDays=[...obj.days].sort();
-      const fromD=sortedDays[0].split('-').reverse().join('/');
-      const toD=sortedDays[sortedDays.length-1].split('-').reverse().join('/');
+      const fromD=sortedDays[0].split('-').reverse().join('/');const toD=sortedDays[sortedDays.length-1].split('-').reverse().join('/');
       const dvDetail=DV_LIST.filter(dv=>obj.dayCnt[dv]).map(dv=>`<span style="color:${DV_COLORS[dv]};font-weight:700">${obj.dayCnt[dv]}${DV_LABELS[dv]}</span>`).join(' · ');
-      return `<tr>
-        <td style="font-weight:700;color:var(--accent-light)">${wk}</td>
-        <td style="color:var(--text-muted);font-size:12px">${fromD} – ${toD}</td>
-        <td style="text-align:center;font-weight:800">${obj.total}</td>
-        <td>${dvDetail}</td>
-      </tr>`;
+      return `<tr><td style="font-weight:700;color:var(--accent-light)">${wk}</td><td style="color:var(--text-muted);font-size:12px">${fromD} – ${toD}</td><td style="text-align:center;font-weight:800">${obj.total}</td><td>${dvDetail}</td></tr>`;
     }).join('');
     tableSection2=`<h3>II. THỐNG KÊ THEO TUẦN</h3>
-    <table>
-      <tr><th>Tuần</th><th>Thời gian</th><th style="text-align:center">Tổng</th><th>Chi tiết theo dịch vụ</th></tr>
-      ${weekRows}
-      <tr>
-        <td><strong>TỔNG CỘNG</strong></td><td></td>
-        <td style="text-align:center"><strong>${total}</strong></td>
-        <td>${DV_LIST.filter(d=>totalDV[d]).map(d=>`<strong style="color:${DV_COLORS[d]}">${totalDV[d]}${DV_LABELS[d]}</strong>`).join(' · ')}</td>
-      </tr>
-    </table>`;
-  } else {
+    <table><tr><th>Tuần</th><th>Thời gian</th><th style="text-align:center">Tổng</th><th>Chi tiết</th></tr>${weekRows}
+    <tr><td><strong>TỔNG CỘNG</strong></td><td></td><td style="text-align:center"><strong>${total}</strong></td><td>${DV_LIST.filter(d=>totalDV[d]).map(d=>`<strong style="color:${DV_COLORS[d]}">${totalDV[d]}${DV_LABELS[d]}</strong>`).join(' · ')}</td></tr></table>`;
+  }else{
     const dayRows2=Object.entries(dayCnt).sort().map(([d,obj])=>{
-      const dt=new Date(d);
-      const thu=['CN','T2','T3','T4','T5','T6','T7'][dt.getDay()];
+      const dt=new Date(d);const thu=['CN','T2','T3','T4','T5','T6','T7'][dt.getDay()];
       const dvDetail=DV_LIST.filter(dv=>obj[dv]).map(dv=>`<span style="color:${DV_COLORS[dv]};font-weight:700">${obj[dv]}${DV_LABELS[dv]}</span>`).join(' · ');
       const [dd,mm,yyyy]=d.split('-').reverse();
-      return `<tr>
-        <td style="font-weight:600">${dd}/${mm}/${yyyy}</td>
-        <td style="color:var(--text-muted)">${thu}</td>
-        <td style="text-align:center;font-weight:800">${obj.total}</td>
-        <td>${dvDetail}</td>
-      </tr>`;
+      return `<tr><td style="font-weight:600">${dd}/${mm}/${yyyy}</td><td style="color:var(--text-muted)">${thu}</td><td style="text-align:center;font-weight:800">${obj.total}</td><td>${dvDetail}</td></tr>`;
     }).join('');
     tableSection2=`<h3>II. THỐNG KÊ THEO NGÀY</h3>
-    <table>
-      <tr><th>Ngày</th><th>Thứ</th><th style="text-align:center">Tổng</th><th>Chi tiết theo dịch vụ</th></tr>
-      ${dayRows2}
-      <tr>
-        <td><strong>TỔNG CỘNG</strong></td><td></td>
-        <td style="text-align:center"><strong>${total}</strong></td>
-        <td>${DV_LIST.filter(d=>totalDV[d]).map(d=>`<strong style="color:${DV_COLORS[d]}">${totalDV[d]}${DV_LABELS[d]}</strong>`).join(' · ')}</td>
-      </tr>
-    </table>`;
+    <table><tr><th>Ngày</th><th>Thứ</th><th style="text-align:center">Tổng</th><th>Chi tiết</th></tr>${dayRows2}
+    <tr><td><strong>TỔNG CỘNG</strong></td><td></td><td style="text-align:center"><strong>${total}</strong></td><td>${DV_LIST.filter(d=>totalDV[d]).map(d=>`<strong style="color:${DV_COLORS[d]}">${totalDV[d]}${DV_LABELS[d]}</strong>`).join(' · ')}</td></tr></table>`;
   }
 
-  // Bảng tổng hợp theo dịch vụ
-  const dvSumRows=DV_LIST.filter(d=>totalDV[d]).map(d=>`
-    <tr>
-      <td><span class="badge ${DV_BADGE[d]}">${DV_LABELS[d]}</span></td>
-      <td style="text-align:center;font-weight:700">${totalDV[d]}</td>
-      <td style="text-align:center;color:var(--text-muted)">${Math.round(totalDV[d]/total*100)}%</td>
-    </tr>`).join('');
-
+  const dvSumRows=DV_LIST.filter(d=>totalDV[d]).map(d=>`<tr><td><span class="badge ${DV_BADGE[d]}">${DV_LABELS[d]}</span></td><td style="text-align:center;font-weight:700">${totalDV[d]}</td><td style="text-align:center;color:var(--text-muted)">${Math.round(totalDV[d]/total*100)}%</td></tr>`).join('');
   const ivLines=ivText.split('\n').filter(l=>l.trim()).map(l=>`<li>${l.replace(/^[-•]\s*/,'')}</li>`).join('');
   const vLines=vText.split('\n').filter(l=>l.trim()).map(l=>`<li>${l.replace(/^[-•]\s*/,'')}</li>`).join('');
 
@@ -1555,32 +1305,25 @@ function buildPreview(recs,dayCnt,totalDV,section3Html){
     <p><strong>Người thực hiện:</strong> Phan Duy Đông</p>
     <p><strong>Ngày báo cáo:</strong> ${ngayBaoCao}</p>
     <hr style="border-color:var(--border);margin:16px 0">
-
     <h3>I. TỔNG QUAN KẾT QUẢ</h3>
     <ul>
       <li>Tổng số đơn vị đã hỗ trợ: <strong class="rpt-highlight">${total} đơn vị</strong></li>
       <li>Trong đó: ${DV_LIST.filter(d=>totalDV[d]).map(d=>`<strong style="color:${DV_COLORS[d]}">${totalDV[d]} ${DV_LABELS[d]}</strong>`).join(' · ')}</li>
       <li>Tỷ lệ xử lý hoàn thành: <strong>100%</strong></li>
     </ul>
-
     ${tableSection2}
-
     <h3>II.A. TỔNG HỢP THEO DỊCH VỤ</h3>
     <table style="max-width:400px">
       <tr><th>Dịch vụ</th><th style="text-align:center">Số lượng</th><th style="text-align:center">Tỷ lệ</th></tr>
       ${dvSumRows}
       <tr><td><strong>Tổng</strong></td><td style="text-align:center"><strong>${total}</strong></td><td style="text-align:center">100%</td></tr>
     </table>
-
     <h3>III. CHI TIẾT CÁC HẠNG MỤC HỖ TRỢ</h3>
     ${section3Html}
-
     <h3>IV. ĐÁNH GIÁ & ĐỀ XUẤT</h3>
     <ul>${ivLines}</ul>
-
     <h3>V. KẾ HOẠCH TUẦN TIẾP THEO</h3>
     <ul>${vLines}</ul>
-
     <br>
     <p class="center"><em>Đà Nẵng, ngày ${ngayBaoCao}</em></p>
     <p class="center"><strong>Người làm báo cáo</strong></p>
@@ -1600,8 +1343,7 @@ async function exportDocx(){
   const {Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,AlignmentType,WidthType,BorderStyle,ShadingType,LevelFormat}=docx;
 
   const recs=getReportRecords();
-  const dayCnt={};
-  recs.forEach(r=>{if(!dayCnt[r.ngay])dayCnt[r.ngay]={total:0};dayCnt[r.ngay].total++;dayCnt[r.ngay][r.dichvu]=(dayCnt[r.ngay][r.dichvu]||0)+1;});
+  const dayCnt={};recs.forEach(r=>{if(!dayCnt[r.ngay])dayCnt[r.ngay]={total:0};dayCnt[r.ngay].total++;dayCnt[r.ngay][r.dichvu]=(dayCnt[r.ngay][r.dichvu]||0)+1;});
   const totalDV={};recs.forEach(r=>{totalDV[r.dichvu]=(totalDV[r.dichvu]||0)+1;});
   const total=recs.length;
 
@@ -1615,73 +1357,49 @@ async function exportDocx(){
 
   let fromDate,toDate,tieude;
   if(type==='tuan'){
-    fromDate=document.getElementById('rpt-from').value;
-    toDate=document.getElementById('rpt-to').value;
+    fromDate=document.getElementById('rpt-from').value;toDate=document.getElementById('rpt-to').value;
     const m=toDate.slice(5,7),y=toDate.slice(0,4);
     tieude=`BÁO CÁO CÔNG VIỆC TUẦN ${sotuan||'??'} – THÁNG ${m}/${y}`;
   }else{
-    const month=document.getElementById('rpt-month').value;
-    fromDate=month+'-01';toDate=month+'-31';
+    const month=document.getElementById('rpt-month').value;fromDate=month+'-01';toDate=month+'-31';
     tieude=`BÁO CÁO CÔNG VIỆC THÁNG ${month.slice(5,7)}/${month.slice(0,4)}`;
   }
 
   const border={style:BorderStyle.SINGLE,size:1,color:'CCCCCC'};
   const borders={top:border,bottom:border,left:border,right:border};
   const mkCell=(text,bold=false,bg=null,center=false)=>new TableCell({
-    borders,
-    shading:bg?{fill:bg,type:ShadingType.CLEAR}:undefined,
+    borders,shading:bg?{fill:bg,type:ShadingType.CLEAR}:undefined,
     margins:{top:60,bottom:60,left:100,right:100},
     children:[new Paragraph({alignment:center?AlignmentType.CENTER:AlignmentType.LEFT,children:[new TextRun({text:String(text),bold,size:22,font:'Arial'})]})]
   });
-
   const mkPara=(text,bold=false,size=24,center=false)=>new Paragraph({
     children:[new TextRun({text,bold,size,font:'Arial'})],
-    alignment:center?AlignmentType.CENTER:AlignmentType.LEFT,
-    spacing:{before:80,after:60}
+    alignment:center?AlignmentType.CENTER:AlignmentType.LEFT,spacing:{before:80,after:60}
   });
 
-  // Day table or Week table
-  let mainTableRows;
-  let mainTableHeader;
+  let mainTableRows,mainTableHeader;
   if(type==='thang'){
-    // Group by week
     const weekGroups={};
-    recs.forEach(r=>{
-      const d=new Date(r.ngay);
-      const weekNum=getWeekOfMonth(d);
-      const wk=`Tuần ${weekNum}`;
-      if(!weekGroups[wk]){weekGroups[wk]={days:[],dayCnt:{},total:0};}
-      weekGroups[wk].days.push(r.ngay);
-      weekGroups[wk].total++;
-      weekGroups[wk].dayCnt[r.dichvu]=(weekGroups[wk].dayCnt[r.dichvu]||0)+1;
-    });
+    recs.forEach(r=>{const d=new Date(r.ngay);const wk=`Tuần ${getWeekOfMonth(d)}`;if(!weekGroups[wk]){weekGroups[wk]={days:[],dayCnt:{},total:0};}weekGroups[wk].days.push(r.ngay);weekGroups[wk].total++;weekGroups[wk].dayCnt[r.dichvu]=(weekGroups[wk].dayCnt[r.dichvu]||0)+1;});
     mainTableHeader=new TableRow({children:[mkCell('Tuần',true,'D5E8F0'),mkCell('Thời gian',true,'D5E8F0'),mkCell('Tổng',true,'D5E8F0',true),mkCell('Chi tiết dịch vụ',true,'D5E8F0')]});
     mainTableRows=Object.entries(weekGroups).sort().map(([wk,obj])=>{
       const sortedDays=[...new Set(obj.days)].sort();
-      const fromD=sortedDays[0].split('-').reverse().join('/');
-      const toD=sortedDays[sortedDays.length-1].split('-').reverse().join('/');
+      const fromD=sortedDays[0].split('-').reverse().join('/');const toD=sortedDays[sortedDays.length-1].split('-').reverse().join('/');
       const dvDetail=DV_LIST.filter(dv=>obj.dayCnt[dv]).map(dv=>`${obj.dayCnt[dv]}${DV_LABELS[dv]}`).join(' · ');
       return new TableRow({children:[mkCell(wk,true),mkCell(`${fromD} – ${toD}`),mkCell(String(obj.total),false,null,true),mkCell(dvDetail)]});
     });
-  } else {
+  }else{
     mainTableHeader=new TableRow({children:[mkCell('Ngày',true,'D5E8F0'),mkCell('Thứ',true,'D5E8F0'),mkCell('Tổng',true,'D5E8F0',true),mkCell('Chi tiết dịch vụ',true,'D5E8F0')]});
     mainTableRows=Object.entries(dayCnt).sort().map(([d,obj])=>{
-      const dt=new Date(d);
-      const thu=['CN','T2','T3','T4','T5','T6','T7'][dt.getDay()];
+      const dt=new Date(d);const thu=['CN','T2','T3','T4','T5','T6','T7'][dt.getDay()];
       const dvDetail=DV_LIST.filter(dv=>obj[dv]).map(dv=>`${obj[dv]}${DV_LABELS[dv]}`).join(' · ');
       return new TableRow({children:[mkCell(d.split('-').reverse().join('/')),mkCell(thu),mkCell(String(obj.total),false,null,true),mkCell(dvDetail)]});
     });
   }
-  const mainTotalRow=new TableRow({children:[
-    mkCell('TỔNG CỘNG',true),mkCell(''),mkCell(String(total),true,null,true),
-    mkCell(DV_LIST.filter(d=>totalDV[d]).map(d=>`${totalDV[d]}${DV_LABELS[d]}`).join(' · '),true)
-  ]});
+  const mainTotalRow=new TableRow({children:[mkCell('TỔNG CỘNG',true),mkCell(''),mkCell(String(total),true,null,true),mkCell(DV_LIST.filter(d=>totalDV[d]).map(d=>`${totalDV[d]}${DV_LABELS[d]}`).join(' · '),true)]});
 
-  // DV summary table
   const dvHeaderRow=new TableRow({children:[mkCell('Dịch vụ',true,'D5E8F0'),mkCell('Số lượng',true,'D5E8F0',true),mkCell('Tỷ lệ',true,'D5E8F0',true)]});
-  const dvDataRows=DV_LIST.filter(d=>totalDV[d]).map(d=>new TableRow({children:[
-    mkCell(DV_LABELS[d]),mkCell(String(totalDV[d]),false,null,true),mkCell(Math.round(totalDV[d]/total*100)+'%',false,null,true)
-  ]}));
+  const dvDataRows=DV_LIST.filter(d=>totalDV[d]).map(d=>new TableRow({children:[mkCell(DV_LABELS[d]),mkCell(String(totalDV[d]),false,null,true),mkCell(Math.round(totalDV[d]/total*100)+'%',false,null,true)]}));
   const dvTotalRow=new TableRow({children:[mkCell('Tổng',true),mkCell(String(total),true,null,true),mkCell('100%',false,null,true)]});
 
   const ivItems=ivText.split('\n').filter(l=>l.trim()).map(l=>new Paragraph({numbering:{reference:'bullets',level:0},children:[new TextRun({text:l.replace(/^[-•]\s*/,''),size:24,font:'Arial'})]}));
@@ -1702,32 +1420,25 @@ async function exportDocx(){
         new Paragraph({children:[new TextRun({text:'Người thực hiện: ',bold:true,size:24,font:'Arial'}),new TextRun({text:'Phan Duy Đông',bold:true,size:24,font:'Arial'})]}),
         new Paragraph({children:[new TextRun({text:'Ngày báo cáo: ',bold:true,size:24,font:'Arial'}),new TextRun({text:ngayBaoCao,size:24,font:'Arial'})]}),
         new Paragraph({spacing:{before:200}}),
-
         mkPara('I. TỔNG QUAN KẾT QUẢ',true,26),
         new Paragraph({numbering:{reference:'bullets',level:0},children:[new TextRun({text:`Tổng số đơn vị đã hỗ trợ: ${total} đơn vị`,size:24,font:'Arial'})]}),
         new Paragraph({numbering:{reference:'bullets',level:0},children:[new TextRun({text:`Chi tiết: ${DV_LIST.filter(d=>totalDV[d]).map(d=>`${totalDV[d]} ${DV_LABELS[d]}`).join(', ')}`,size:24,font:'Arial'})]}),
         new Paragraph({numbering:{reference:'bullets',level:0},children:[new TextRun({text:'Tỷ lệ xử lý hoàn thành: 100%',size:24,font:'Arial'})]}),
-
         new Paragraph({spacing:{before:160}}),
         mkPara('II. THỐNG KÊ THEO NGÀY/TUẦN',true,26),
         new Table({width:{size:9360,type:WidthType.DXA},columnWidths:[2000,1200,1200,4960],rows:[mainTableHeader,...mainTableRows,mainTotalRow]}),
-
         new Paragraph({spacing:{before:160}}),
         mkPara('II.A. TỔNG HỢP THEO DỊCH VỤ',true,26),
         new Table({width:{size:5000,type:WidthType.DXA},columnWidths:[2000,1500,1500],rows:[dvHeaderRow,...dvDataRows,dvTotalRow]}),
-
         new Paragraph({spacing:{before:160}}),
         mkPara('III. CHI TIẾT CÁC HẠNG MỤC HỖ TRỢ',true,26),
         mkPara('(Xem chi tiết theo từng dịch vụ trong bảng trên)',false,22),
-
         new Paragraph({spacing:{before:160}}),
         mkPara('IV. ĐÁNH GIÁ & ĐỀ XUẤT',true,26),
         ...ivItems,
-
         new Paragraph({spacing:{before:160}}),
         mkPara('V. KẾ HOẠCH TUẦN TIẾP THEO',true,26),
         ...vItems,
-
         new Paragraph({spacing:{before:400}}),
         mkPara(`Đà Nẵng, ngày ${ngayBaoCao}`,false,22,true),
         mkPara('Người làm báo cáo',true,24,true),
@@ -1740,9 +1451,7 @@ async function exportDocx(){
 
   const buffer=await Packer.toBlob(doc);
   const url=URL.createObjectURL(buffer);
-  const a=document.createElement('a');a.href=url;
-  a.download=`BaoCao_Dong_${new Date().toISOString().split('T')[0]}.docx`;
-  a.click();URL.revokeObjectURL(url);
+  const a=document.createElement('a');a.href=url;a.download=`BaoCao_Dong_${new Date().toISOString().split('T')[0]}.docx`;a.click();URL.revokeObjectURL(url);
   toast('✓ Đã xuất file .docx!','success');
 }
 
