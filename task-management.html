@@ -744,12 +744,15 @@ let mstSuggestIdx=-1;
 
 function onMstInput(inp){
   const val=inp.value.trim();
+  const valNorm=val.replace(/-/g,'');
   const box=document.getElementById('mst-suggest');
   if(val.length<3){box.style.display='none';mstSuggestIdx=-1;return;}
-  // Tìm các records có MST khớp từ lịch sử local
+  // Tìm các records có MST khớp từ lịch sử local (hỗ trợ cả dạng có và không có gạch ngang)
   const seen=new Map();
   records.forEach(r=>{
-    if(r.mst&&r.mst.includes(val)&&!seen.has(r.mst)){
+    if(!r.mst)return;
+    const rNorm=r.mst.replace(/-/g,'');
+    if((r.mst.includes(val)||rNorm.includes(valNorm))&&!seen.has(r.mst)){
       seen.set(r.mst,{mst:r.mst,sdt:r.sdt,donvi:r.donvi});
     }
   });
@@ -788,65 +791,126 @@ function onMstKeydown(e){
   if(e.key==='Enter'){e.preventDefault();document.getElementById('inp-sdt').focus();}
 }
 
+// Chuẩn hoá MST: chấp nhận 0104648885-003, 0104648885003, 0104648885 003 v.v.
+function normalizeMST(raw){
+  // Giữ lại chữ số và dấu gạch ngang
+  const cleaned=raw.trim().replace(/\s/g,'');
+  // Dạng có gạch ngang: 10-3 hoặc 10-3 ký tự → chuẩn hoá thành dạng không dấu cho API
+  const dashMatch=cleaned.match(/^(\d{10})-(\d{3})$/);
+  if(dashMatch) return {display:cleaned, api:`${dashMatch[1]}${dashMatch[2]}`, raw:cleaned};
+  // Dạng 13 số liền
+  if(/^\d{13}$/.test(cleaned)) return {display:cleaned, api:cleaned, raw:cleaned};
+  // Dạng 10 số liền
+  if(/^\d{10}$/.test(cleaned)) return {display:cleaned, api:cleaned, raw:cleaned};
+  return null;
+}
+
 async function traCuuMST(){
-  const mst=document.getElementById('inp-mst').value.trim().replace(/\s/g,'');
-  if(!mst){toast('Nhập MST trước khi tra cứu','error');return;}
-  if(!/^\d{10}(\d{3})?$/.test(mst)){toast('MST phải là 10 hoặc 13 chữ số','error');return;}
+  const rawMst=document.getElementById('inp-mst').value;
+  if(!rawMst.trim()){toast('Nhập MST trước khi tra cứu','error');return;}
+
+  const mstObj=normalizeMST(rawMst);
+  if(!mstObj){
+    toast('MST không hợp lệ — cần 10 số, 13 số, hoặc dạng 1234567890-001','error');
+    return;
+  }
+
+  const mstApi=mstObj.api;   // dùng cho API (không dấu gạch)
+  const mstDisplay=mstObj.display; // dùng để hiển thị & link
 
   const statusEl=document.getElementById('mst-lookup-status');
   const btn=document.getElementById('btn-tracuu');
   btn.textContent='⏳';btn.disabled=true;
   statusEl.style.color='var(--yellow)';statusEl.textContent='Đang tra cứu...';
 
-  // Thử các API proxy CORS-friendly cho MST Việt Nam
-  const apis=[
-    `https://api.vietqr.io/v2/business/${mst}`,
-    `https://mst.vneids.com/api/taxpayer/${mst}`,
-  ];
-
   let found=false;
-  // API 1: VietQR business lookup
-  try {
-    const r=await fetch(`https://api.vietqr.io/v2/business/${mst}`,{headers:{Accept:'application/json'}});
-    if(r.ok){
-      const j=await r.json();
-      if(j.code==='00'&&j.data&&j.data.name){
-        const name=j.data.name;
-        const addr=j.data.address||'';
-        document.getElementById('inp-donvi').value=name;
-        statusEl.style.color='var(--green)';
-        statusEl.textContent=`✓ ${name}${addr?' · '+addr.slice(0,50):''}`;
-        document.getElementById('mst-suggest').style.display='none';
-        document.getElementById('inp-sdt').focus();
-        toast('✓ Đã điền tên đơn vị từ MST!','success');
-        found=true;
-      }
-    }
-  } catch(e){}
 
-  // API 2: thử api.masothue.com nếu API 1 thất bại  
+  // ── API 1: VietQR Business (hỗ trợ tốt MST chính & chi nhánh) ──
   if(!found){
-    try {
-      const r=await fetch(`https://api.masothue.com/v1/doanh-nghiep/${mst}`);
+    try{
+      const r=await fetch(`https://api.vietqr.io/v2/business/${mstApi}`,{
+        headers:{Accept:'application/json','x-client-id':'phanduyDong','x-api-key':''}
+      });
       if(r.ok){
         const j=await r.json();
-        const name=j?.data?.ten||j?.ten||'';
+        const name=j?.data?.name||j?.data?.shortName||'';
         if(name){
-          document.getElementById('inp-donvi').value=name;
-          statusEl.style.color='var(--green)';statusEl.textContent=`✓ ${name}`;
-          document.getElementById('inp-sdt').focus();
-          toast('✓ Đã điền tên đơn vị!','success');
+          const addr=j?.data?.address||'';
+          setDonvi(name,addr,statusEl);
           found=true;
         }
       }
-    } catch(e){}
+    }catch(e){}
+  }
+
+  // ── API 2: Thuế VN qua CORS proxy (scrape masothue.com JSON endpoint) ──
+  if(!found){
+    try{
+      // masothue.com có API nội bộ trả JSON
+      const proxyUrl=`https://corsproxy.io/?${encodeURIComponent('https://masothue.com/Search/SearchByTaxId?taxid='+mstApi)}`;
+      const r=await fetch(proxyUrl,{headers:{Accept:'application/json, text/html'}});
+      if(r.ok){
+        const text=await r.text();
+        // Thử parse JSON trước
+        try{
+          const j=JSON.parse(text);
+          const name=j?.data?.[0]?.name||j?.Name||j?.[0]?.name||'';
+          if(name){setDonvi(name,'',statusEl);found=true;}
+        }catch(_){
+          // Parse HTML: tìm thẻ h1 hoặc title công ty
+          const titleMatch=text.match(/class="tax-name"[^>]*>([^<]+)/i)
+            ||text.match(/<h1[^>]*>([^<]+)<\/h1>/i)
+            ||text.match(/title="([^"]+)"\s+class="company/i);
+          if(titleMatch&&titleMatch[1].trim().length>3){
+            setDonvi(titleMatch[1].trim(),'',statusEl);found=true;
+          }
+        }
+      }
+    }catch(e){}
+  }
+
+  // ── API 3: api.vietqr.io lookup bằng mstDisplay (có dấu gạch ngang) ──
+  if(!found&&mstObj.raw.includes('-')){
+    try{
+      const r=await fetch(`https://api.vietqr.io/v2/business/${mstDisplay}`,{headers:{Accept:'application/json'}});
+      if(r.ok){
+        const j=await r.json();
+        const name=j?.data?.name||'';
+        if(name){setDonvi(name,j?.data?.address||'',statusEl);found=true;}
+      }
+    }catch(e){}
+  }
+
+  // ── API 4: Thử endpoint tra cứu trực tiếp cục thuế (CORS proxy) ──
+  if(!found){
+    try{
+      const url=`https://corsproxy.io/?${encodeURIComponent('https://tracuunnt.gdt.gov.vn/tcnnt/mstdn.jsp')}`;
+      const body=new URLSearchParams({mst:mstApi,loai:'1'});
+      const r=await fetch(url,{method:'POST',body,headers:{'Content-Type':'application/x-www-form-urlencoded'}});
+      if(r.ok){
+        const text=await r.text();
+        // tìm tên trong kết quả HTML
+        const m=text.match(/Tên người nộp thuế[^:]*:\s*<[^>]+>([^<]+)/i)
+          ||text.match(/class="[^"]*ten[^"]*"[^>]*>([^<]{5,})</i);
+        if(m&&m[1].trim().length>3){setDonvi(m[1].trim(),'',statusEl);found=true;}
+      }
+    }catch(e){}
   }
 
   if(!found){
-    statusEl.style.color='var(--text-muted)';
-    statusEl.innerHTML=`Không tìm thấy · <a href="https://masothue.com/${mst}" target="_blank" style="color:var(--accent-light)">Tra thủ công</a>`;
+    statusEl.style.color='var(--orange)';
+    statusEl.innerHTML=`⚠ Không tra cứu tự động được · <a href="https://masothue.com/${mstDisplay}" target="_blank" style="color:var(--accent-light);font-weight:700">🔗 Mở masothue.com</a> rồi copy tên vào`;
   }
   btn.textContent='🔍';btn.disabled=false;
+}
+
+function setDonvi(name, addr, statusEl){
+  document.getElementById('inp-donvi').value=name;
+  statusEl.style.color='var(--green)';
+  statusEl.textContent=`✓ ${name}${addr?' · '+addr.slice(0,60):''}`;
+  document.getElementById('mst-suggest').style.display='none';
+  document.getElementById('inp-sdt').focus();
+  toast('✓ Đã điền tên đơn vị!','success');
 }
 
 function fillFromMst(mst,sdt,donvi){
