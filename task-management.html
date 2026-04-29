@@ -1540,9 +1540,11 @@ try{
     } else {
       buildPreview(recs,dayCnt,totalDV,genFallbackSection3(dvGroups));
     }
-  }catch(e){
+}catch(e){
     buildPreview(recs,dayCnt,totalDV,genFallbackSection3(dvGroups));
   }
+  loading.style.display='none';
+}
 
 function genFallbackSection3(dvGroups){
   const dvNames={BHXH:'Dịch vụ BHXH điện tử',HD:'Dịch vụ Hóa đơn điện tử',CKS:'Dịch vụ Chữ ký số',Khac:'Hỗ trợ nghiệp vụ khác'};
