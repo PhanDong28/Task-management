@@ -1523,21 +1523,37 @@ Hãy viết phần "III. CHI TIẾT CÁC HẠNG MỤC HỖ TRỢ":
 4. Bỏ qua mục nào không có dữ liệu
 5. Chỉ trả về HTML thuần với thẻ <h4> và <ul><li> — không markdown, không giải thích`;
 
-  try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+try{
+    const controller2 = new AbortController();
+    const apiTimeout = setTimeout(()=>controller2.abort(), 8000);
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      signal:controller2.signal,
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})
+    });
+    clearTimeout(apiTimeout);
     const d=await res.json();
     const aiText=d.content?.[0]?.text||'';
-    buildPreview(recs,dayCnt,totalDV,aiText);
-  }catch(e){buildPreview(recs,dayCnt,totalDV,genFallbackSection3(dvGroups));}
-  loading.style.display='none';
-}
+    if(aiText.trim()){
+      buildPreview(recs,dayCnt,totalDV,aiText);
+    } else {
+      buildPreview(recs,dayCnt,totalDV,genFallbackSection3(dvGroups));
+    }
+  }catch(e){
+    buildPreview(recs,dayCnt,totalDV,genFallbackSection3(dvGroups));
+  }
 
 function genFallbackSection3(dvGroups){
   const dvNames={BHXH:'Dịch vụ BHXH điện tử',HD:'Dịch vụ Hóa đơn điện tử',CKS:'Dịch vụ Chữ ký số',Khac:'Hỗ trợ nghiệp vụ khác'};
-  return DV_LIST.filter(d=>dvGroups[d]).map(d=>{
-    const items=[...new Set(dvGroups[d])].slice(0,4);
-    return `<h4 style="color:${DV_COLORS[d]};margin:12px 0 6px">${dvNames[d]||d}</h4><ul>${items.map(i=>`<li>${i}</li>`).join('')}</ul>`;
+  const result = DV_LIST.filter(d=>dvGroups[d]&&dvGroups[d].length>0).map(d=>{
+    const items=[...new Set(dvGroups[d])].filter(x=>x&&x.trim());
+    const liItems = items.length>0
+      ? items.slice(0,8).map(i=>`<li>${i}</li>`).join('')
+      : '<li>Đã hỗ trợ các vấn đề liên quan</li>';
+    return `<h4 style="color:${DV_COLORS[d]};margin:12px 0 6px;font-size:13px">${dvNames[d]||d}</h4><ul>${liItems}</ul>`;
   }).join('');
+  return result || '<p style="color:var(--text-muted);font-size:12px"><em>Không có ghi chú nội dung chi tiết. Vui lòng nhập nội dung hỗ trợ khi ghi bản ghi để AI có thể tổng hợp.</em></p>';
 }
 
 function buildPreview(recs,dayCnt,totalDV,section3Html){
