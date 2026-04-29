@@ -1503,6 +1503,7 @@ async function genReportPreview(){
   const dvGroups={};recs.forEach(r=>{if(!dvGroups[r.dichvu])dvGroups[r.dichvu]=[];if(r.noidung)dvGroups[r.dichvu].push(r.noidung);});
   const dvSummary=Object.entries(dvGroups).map(([dv,items])=>`${DV_LABELS[dv]}: ${[...new Set(items)].slice(0,4).join('; ')}`).join('\n');
 
+  const total = recs.length;
   const noidungChiTiet = recs
   .filter(r => r.noidung)
   .map(r => `[${r.dichvu}] ${r.donvi}: ${r.noidung}`)
