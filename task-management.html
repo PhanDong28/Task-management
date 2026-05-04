@@ -1000,10 +1000,12 @@ function fillFromMst(mst,sdt,donvi){
 function normalizeMST(raw) {
   const cleaned = raw.trim().replace(/\s/g, '');
   // Dạng dash: 0104648885-003
-  if (/^\d{10}-\d{3}$/.test(cleaned)) {
+if (/^\d{10}-\d{3}$/.test(cleaned)) {
     const root = cleaned.split('-')[0];
     const suffix = cleaned.split('-')[1];
-    return { display: cleaned, candidates: [`${root}${suffix}`, root], root, type:'mst', raw: cleaned };
+    const full13 = `${root}${suffix}`;
+    // Thử cả 3 dạng: 13 số liền, có dấu gạch, và MST gốc 10 số
+    return { display: cleaned, candidates: [full13, cleaned, root], root, type:'mst', raw: cleaned };
   }
   if (/^\d{13}$/.test(cleaned)) return { display: cleaned, candidates: [cleaned, cleaned.slice(0,10)], root: cleaned.slice(0,10), type:'mst', raw: cleaned };
   if (/^\d{10}$/.test(cleaned)) return { display: cleaned, candidates: [cleaned], root: cleaned, type:'mst', raw: cleaned };
@@ -1059,6 +1061,17 @@ async function tryLookupOneMST(code, signal) {
         for(const pat of patterns){const m=text.match(pat);if(m){let name=m[1].trim().replace(/^\d{10,13}\s*[-–]\s*/,'').replace(/\s*[|–-]\s*(masothue|tracuu).*/i,'').trim();if(isValid(name))return{name,addr:''};}}
         return null;
       }).catch(()=>null),
+    // masothue trực tiếp bằng code (dạng slug URL)
+    fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent('https://masothue.com/'+code)}`,{signal})
+      .then(r=>r.text()).then(text=>{
+        const patterns=[
+          /<h1[^>]*class="[^"]*company[^"]*"[^>]*>\s*([^<]{5,}?)\s*<\/h1>/i,
+          /<title>\s*([^<]{5,}?)\s*[-|]/i,
+          /itemprop="name"[^>]*>\s*([^<]{5,}?)\s*</i,
+        ];
+        for(const pat of patterns){const m=text.match(pat);if(m){let name=m[1].trim().replace(/^\d{10,13}\s*[-–]\s*/,'').trim();if(isValid(name)&&name.length>3)return{name,addr:''}; }}
+        return null;
+      }).catch(()=>null),
   ];
   const results=await Promise.allSettled(tasks);
   for(const r of results){if(r.status==='fulfilled'&&r.value)return r.value;}
@@ -1091,6 +1104,18 @@ async function tryLookupCCCD(code, signal) {
       .then(r=>r.text()).then(text=>{
         const patterns=[/class="tax-name"[^>]*>\s*([^<]{5,})/i,/property="og:title"\s+content="([^"]{5,})"/i];
         for(const pat of patterns){const m=text.match(pat);if(m){let name=m[1].trim().replace(/^\d{9,12}\s*[-–]\s*/,'').replace(/\s*[|–-]\s*(masothue|tracuu).*/i,'').trim();if(isValid(name))return{name,addr:''};}}
+        return null;
+      }).catch(()=>null),
+        // masothue tìm kiếm bằng CCCD
+    fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent('https://masothue.com/tim-kiem?q='+code)}`,{signal})
+      .then(r=>r.text()).then(text=>{
+        // Tìm kết quả đầu tiên trong trang search
+        const patterns=[
+          /class="[^"]*company-name[^"]*"[^>]*>\s*([^<]{5,}?)\s*</i,
+          /class="[^"]*taxname[^"]*"[^>]*>\s*([^<]{5,}?)\s*</i,
+          /<a[^>]+href="\/\d{9,13}"[^>]*>\s*([^<]{5,}?)\s*<\/a>/i,
+        ];
+        for(const pat of patterns){const m=text.match(pat);if(m&&isValid(m[1].trim()))return{name:m[1].trim(),addr:''};}
         return null;
       }).catch(()=>null),
   ];
@@ -1131,10 +1156,20 @@ async function traCuuMST() {
   const isCCCD = mstObj.type === 'cccd' || mstObj.type === 'cmnd';
 
   if (isCCCD) {
-    setStatus('🔍 Đang tra cứu CCCD/CMND...', 'loading');
-  } else {
-    setStatus('🔍 Đang tra cứu MST...', 'loading');
-  }
+      statusEl.innerHTML = `⚠ CCCD hộ KD cần tra thủ công &nbsp;
+        <button onclick="openCCCDPopup('${mstObj.display}')" style="background:var(--orange);color:white;border:none;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:700">
+          🔗 Tra trên masothue.com
+        </button>
+        <span style="font-size:10px;color:var(--text-dim);margin-left:6px">Tìm xong copy tên → paste vào ô Tên đơn vị</span>`;
+    } else {
+      statusEl.innerHTML = `⚠ Không tự tra được &nbsp;
+        <button onclick="openMstPopup('${mstObj.display}')" style="background:var(--accent);color:white;border:none;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:700">
+          🔗 Mở masothue.com
+        </button>
+        <button onclick="openMstPopup('${mstObj.candidates[0]}')" style="background:var(--surface2);color:var(--text-muted);border:1px solid var(--border);padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:700;margin-left:4px">
+          🔗 Thử MST gốc
+        </button>`;
+    }
   document.getElementById('mst-suggest').style.display = 'none';
 
   const controller = new AbortController();
@@ -1179,11 +1214,11 @@ function openMstPopup(mst){
 }
 
 function openCCCDPopup(cccd){
-  // Với CCCD hộ KD, tra qua tracuunnt hoặc masothue
+  // masothue.com hỗ trợ tra CCCD hộ KD qua trang tìm kiếm
   _openLookupPopup(
-    `https://masothue.com/Search/SearchByTaxId?taxid=${cccd}`,
-    `🪪 Tra cứu CCCD hộ KD: ${cccd}`,
-    'Tìm tên chủ hộ KD → copy → đóng popup → paste vào ô tên đơn vị'
+    `https://masothue.com/tim-kiem?q=${cccd}`,
+    `🪪 Tra CCCD hộ kinh doanh: ${cccd}`,
+    'Tìm tên hộ KD → copy tên → đóng popup → paste vào ô Tên đơn vị'
   );
 }
 
