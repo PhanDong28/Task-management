@@ -1029,180 +1029,219 @@ function setDonvi(name, addr) {
   toast('✓ Đã điền tên đơn vị!', 'success');
 }
 
-// Tra cứu 1 mã MST qua các API song song
+// ── LOOKUP CORE ──
+// Lấy kết quả nhanh nhất từ nhiều API song song, race nhau
+async function raceAPIs(tasks) {
+  // Trả về kết quả đầu tiên thành công, không đợi cái chậm
+  return new Promise(resolve => {
+    let done = false;
+    let pending = tasks.length;
+    if (!pending) { resolve(null); return; }
+    tasks.forEach(p => {
+      Promise.resolve(p).then(val => {
+        if (!done && val) { done = true; resolve(val); }
+      }).catch(() => {}).finally(() => {
+        pending--;
+        if (pending === 0 && !done) resolve(null);
+      });
+    });
+  });
+}
+
+const isValidName = name => name && name.trim().length > 3 && !/^\d+$/.test(name.trim()) && name.trim() !== 'null';
+
+// API 1: Thuế điện tử GDT (nhanh nhất, chính xác nhất)
+async function apiGDT(code, signal) {
+  try {
+    const r = await fetch(`https://thuedientu.gdt.gov.vn/etaxnnt/Request?func=PublicSynTaxCodeInfo&taxCode=${code}&format=json`, { signal });
+    const j = await r.json();
+    const name = j?.data?.name || j?.data?.Name || j?.Name || j?.name || '';
+    if (isValidName(name)) return { name: name.trim(), addr: j?.data?.address || j?.data?.Address || '' };
+  } catch {}
+  return null;
+}
+
+// API 2: VietQR business lookup
+async function apiVietQR(code, signal) {
+  try {
+    const r = await fetch(`https://api.vietqr.io/v2/business/${code}`, { signal, headers: { Accept: 'application/json' } });
+    const j = await r.json();
+    const name = j?.data?.name || j?.data?.businessName || j?.data?.ownerName || '';
+    if (isValidName(name)) return { name: name.trim(), addr: j?.data?.address || '' };
+  } catch {}
+  return null;
+}
+
+// API 3: masothue.com search (proxy qua allorigins)
+async function apiMasothueSearch(code, signal) {
+  try {
+    const url = `https://masothue.com/Search/SearchByTaxId?taxid=${code}`;
+    const r = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`, { signal });
+    const text = await r.text();
+    // Thử parse JSON trước
+    try {
+      const j = JSON.parse(text);
+      const name = j?.data?.[0]?.name || j?.[0]?.name || '';
+      if (isValidName(name)) return { name: name.trim(), addr: '' };
+    } catch {}
+    // Fallback: scrape HTML
+    const pats = [
+      /class="tax-name"[^>]*>\s*([^<]{5,})/i,
+      /property="og:title"\s+content="([^"]{5,})"/i,
+      /<h1[^>]*>\s*([^<]{5,}?)\s*<\/h1>/i,
+    ];
+    for (const pat of pats) {
+      const m = text.match(pat);
+      if (m) {
+        let name = m[1].trim()
+          .replace(/^\d{10,13}\s*[-–]\s*/, '')
+          .replace(/\s*[|–-]\s*(masothue|tracuu|Mã số thuế).*/i, '')
+          .trim();
+        if (isValidName(name)) return { name, addr: '' };
+      }
+    }
+  } catch {}
+  return null;
+}
+
+// API 4: masothue direct page (cho MST 10 số)
+async function apiMasoThueDirect(code, signal) {
+  try {
+    const r = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent('https://masothue.com/' + code)}`, { signal });
+    const text = await r.text();
+    const pats = [
+      /itemprop="name"[^>]*>\s*([^<]{5,}?)\s*</i,
+      /<title>\s*([^<]{5,}?)\s*[-|–]/i,
+      /<h1[^>]*class="[^"]*"[^>]*>\s*([^<]{5,}?)\s*<\/h1>/i,
+    ];
+    for (const pat of pats) {
+      const m = text.match(pat);
+      if (m) {
+        let name = m[1].trim().replace(/^\d{10,13}\s*[-–]\s*/, '').trim();
+        if (isValidName(name) && name.length > 3) return { name, addr: '' };
+      }
+    }
+  } catch {}
+  return null;
+}
+
+// API 5: masothue tìm kiếm text (cho CCCD, HKD, tên)
+async function apiMasothueTextSearch(query, signal) {
+  try {
+    const r = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent('https://masothue.com/tim-kiem?q=' + encodeURIComponent(query))}`, { signal });
+    const text = await r.text();
+    const pats = [
+      /<a[^>]+href="\/\d{9,13}"[^>]*>\s*([^<]{5,}?)\s*<\/a>/i,
+      /class="[^"]*company[^"]*"[^>]*>\s*([^<]{5,}?)\s*</i,
+      /class="[^"]*taxname[^"]*"[^>]*>\s*([^<]{5,}?)\s*</i,
+    ];
+    for (const pat of pats) {
+      const m = text.match(pat);
+      if (m && isValidName(m[1].trim())) return { name: m[1].trim(), addr: '' };
+    }
+  } catch {}
+  return null;
+}
+
+// Tra cứu MST (10/13 số, có dấu gạch)
 async function tryLookupOneMST(code, signal) {
-  const isValid = name => name && name.trim().length > 3 && !/^\d+$/.test(name.trim());
-  const tasks = [
-    fetch(`https://thuedientu.gdt.gov.vn/etaxnnt/Request?func=PublicSynTaxCodeInfo&taxCode=${code}&format=json`, { signal })
-      .then(r=>r.json()).then(j=>{
-        const name=j?.data?.name||j?.data?.Name||j?.Name||j?.name||'';
-        if(isValid(name))return{name:name.trim(),addr:j?.data?.address||j?.data?.Address||''};
-        return null;
-      }).catch(()=>null),
-    fetch(`https://api.vietqr.io/v2/business/${code}`, { signal, headers:{Accept:'application/json'} })
-      .then(r=>r.json()).then(j=>{
-        const name=j?.data?.name||j?.data?.businessName||'';
-        if(isValid(name))return{name:name.trim(),addr:j?.data?.address||''};
-        return null;
-      }).catch(()=>null),
-    fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent('https://tracuunnt.gdt.gov.vn/tcnnt/mstdn.jsp?mst='+code)}`,{signal})
-      .then(r=>r.text()).then(text=>{
-        const patterns=[
-          /<td[^>]*>\s*\d{10,13}\s*<\/td>\s*<td[^>]*>\s*([^<]{5,}?)\s*<\/td>/i,
-          /class="[^"]*taxname[^"]*"[^>]*>\s*([^<]{5,}?)\s*<\/td>/i,
-        ];
-        for(const pat of patterns){const m=text.match(pat);if(m&&isValid(m[1].trim()))return{name:m[1].trim(),addr:''};}
-        return null;
-      }).catch(()=>null),
-    fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent('https://masothue.com/Search/SearchByTaxId?taxid='+code)}`,{signal})
-      .then(r=>r.text()).then(text=>{
-        try{const j=JSON.parse(text);const name=j?.data?.[0]?.name||j?.[0]?.name||'';if(isValid(name))return{name:name.trim(),addr:''};}catch(_){}
-        const patterns=[/class="tax-name"[^>]*>\s*([^<]{5,})/i,/property="og:title"\s+content="([^"]{5,})"/i];
-        for(const pat of patterns){const m=text.match(pat);if(m){let name=m[1].trim().replace(/^\d{10,13}\s*[-–]\s*/,'').replace(/\s*[|–-]\s*(masothue|tracuu).*/i,'').trim();if(isValid(name))return{name,addr:''};}}
-        return null;
-      }).catch(()=>null),
-    // masothue trực tiếp bằng code (dạng slug URL)
-    fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent('https://masothue.com/'+code)}`,{signal})
-      .then(r=>r.text()).then(text=>{
-        const patterns=[
-          /<h1[^>]*class="[^"]*company[^"]*"[^>]*>\s*([^<]{5,}?)\s*<\/h1>/i,
-          /<title>\s*([^<]{5,}?)\s*[-|]/i,
-          /itemprop="name"[^>]*>\s*([^<]{5,}?)\s*</i,
-        ];
-        for(const pat of patterns){const m=text.match(pat);if(m){let name=m[1].trim().replace(/^\d{10,13}\s*[-–]\s*/,'').trim();if(isValid(name)&&name.length>3)return{name,addr:''}; }}
-        return null;
-      }).catch(()=>null),
-  ];
-  const results=await Promise.allSettled(tasks);
-  for(const r of results){if(r.status==='fulfilled'&&r.value)return r.value;}
-  return null;
+  // Chuẩn hóa: bỏ dấu gạch để gọi API
+  const codeClean = code.replace(/-/g, '');
+
+  // Race song song — ai trả về trước thắng
+  const result = await raceAPIs([
+    apiGDT(codeClean, signal),
+    apiVietQR(codeClean, signal),
+    apiMasothueSearch(codeClean, signal),
+    apiMasoThueDirect(codeClean, signal),
+  ]);
+  return result;
 }
 
-// Tra cứu CCCD/CMND qua các nguồn có thể
+// Tra cứu CCCD / Hộ KD
 async function tryLookupCCCD(code, signal) {
-  const isValid = name => name && name.trim().length > 3 && !/^\d+$/.test(name.trim());
-
-  // Thử qua tracuunnt với CCCD (một số hộ KD đăng ký bằng CCCD)
-  const tasks = [
-    fetch(`https://thuedientu.gdt.gov.vn/etaxnnt/Request?func=PublicSynTaxCodeInfo&taxCode=${code}&format=json`, { signal })
-      .then(r=>r.json()).then(j=>{
-        const name=j?.data?.name||j?.data?.Name||j?.Name||j?.name||'';
-        if(isValid(name))return{name:name.trim(),addr:j?.data?.address||''};
-        return null;
-      }).catch(()=>null),
-
-    // Thử vietqr với CCCD
-    fetch(`https://api.vietqr.io/v2/business/${code}`, { signal, headers:{Accept:'application/json'} })
-      .then(r=>r.json()).then(j=>{
-        const name=j?.data?.name||j?.data?.businessName||j?.data?.ownerName||'';
-        if(isValid(name))return{name:name.trim(),addr:j?.data?.address||''};
-        return null;
-      }).catch(()=>null),
-
-    // masothue có thể tra bằng CCCD
-    fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent('https://masothue.com/Search/SearchByTaxId?taxid='+code)}`,{signal})
-      .then(r=>r.text()).then(text=>{
-        const patterns=[/class="tax-name"[^>]*>\s*([^<]{5,})/i,/property="og:title"\s+content="([^"]{5,})"/i];
-        for(const pat of patterns){const m=text.match(pat);if(m){let name=m[1].trim().replace(/^\d{9,12}\s*[-–]\s*/,'').replace(/\s*[|–-]\s*(masothue|tracuu).*/i,'').trim();if(isValid(name))return{name,addr:''};}}
-        return null;
-      }).catch(()=>null),
-        // masothue tìm kiếm bằng CCCD
-    fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent('https://masothue.com/tim-kiem?q='+code)}`,{signal})
-      .then(r=>r.text()).then(text=>{
-        // Tìm kết quả đầu tiên trong trang search
-        const patterns=[
-          /class="[^"]*company-name[^"]*"[^>]*>\s*([^<]{5,}?)\s*</i,
-          /class="[^"]*taxname[^"]*"[^>]*>\s*([^<]{5,}?)\s*</i,
-          /<a[^>]+href="\/\d{9,13}"[^>]*>\s*([^<]{5,}?)\s*<\/a>/i,
-        ];
-        for(const pat of patterns){const m=text.match(pat);if(m&&isValid(m[1].trim()))return{name:m[1].trim(),addr:''};}
-        return null;
-      }).catch(()=>null),
-  ];
-
-  const results=await Promise.allSettled(tasks);
-  for(const r of results){if(r.status==='fulfilled'&&r.value)return r.value;}
-  return null;
+  // CCCD hộ KD: thử GDT trước (một số HKD đăng ký bằng CCCD),
+  // sau đó masothue search bằng số CCCD
+  const result = await raceAPIs([
+    apiGDT(code, signal),
+    apiVietQR(code, signal),
+    apiMasothueSearch(code, signal),
+    apiMasothueTextSearch(code, signal),
+  ]);
+  return result;
 }
-
 async function traCuuMST() {
-  const rawMst = document.getElementById('inp-mst').value;
-  if (!rawMst.trim()) { toast('Nhập MST hoặc CCCD trước khi tra cứu', 'error'); return; }
+  const rawMst = document.getElementById('inp-mst').value.trim();
+  if (!rawMst) { toast('Nhập MST hoặc CCCD trước khi tra cứu', 'error'); return; }
 
   const mstObj = normalizeMST(rawMst);
   if (!mstObj) {
-    toast('Số không hợp lệ — cần MST (10/13 số), CCCD (12 số) hoặc dạng 1234567890-001', 'error');
+    toast('Không hợp lệ — cần MST 10/13 số, CCCD 12 số, hoặc dạng 1234567890-003', 'error');
     return;
   }
 
-  // 1. Tìm trong lịch sử trước (nhanh nhất)
+  // 1. Tìm trong lịch sử local trước — nhanh nhất
   const seen = new Map();
   records.forEach(r => {
     if (!r.mst) return;
     const rNorm = r.mst.replace(/-/g, '');
-    if (mstObj.candidates.some(c => rNorm === c || r.mst === rawMst.trim())) {
+    if (mstObj.candidates.some(c => rNorm === c.replace(/-/g,'') || r.mst === rawMst)) {
       if (!seen.has(r.mst)) seen.set(r.mst, { name: r.donvi, addr: '' });
     }
   });
   if (seen.size > 0) {
-    const first = [...seen.values()][0];
-    setDonvi(first.name, first.addr);
+    setDonvi([...seen.values()][0].name, '');
     return;
   }
 
   const btn = document.getElementById('btn-tracuu');
+  const statusEl = document.getElementById('mst-lookup-status');
   btn.textContent = '⏳'; btn.disabled = true;
-
-  const isCCCD = mstObj.type === 'cccd' || mstObj.type === 'cmnd';
-
-  if (isCCCD) {
-      statusEl.innerHTML = `⚠ CCCD hộ KD cần tra thủ công &nbsp;
-        <button onclick="openCCCDPopup('${mstObj.display}')" style="background:var(--orange);color:white;border:none;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:700">
-          🔗 Tra trên masothue.com
-        </button>
-        <span style="font-size:10px;color:var(--text-dim);margin-left:6px">Tìm xong copy tên → paste vào ô Tên đơn vị</span>`;
-    } else {
-      statusEl.innerHTML = `⚠ Không tự tra được &nbsp;
-        <button onclick="openMstPopup('${mstObj.display}')" style="background:var(--accent);color:white;border:none;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:700">
-          🔗 Mở masothue.com
-        </button>
-        <button onclick="openMstPopup('${mstObj.candidates[0]}')" style="background:var(--surface2);color:var(--text-muted);border:1px solid var(--border);padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:700;margin-left:4px">
-          🔗 Thử MST gốc
-        </button>`;
-    }
   document.getElementById('mst-suggest').style.display = 'none';
 
+  const isCCCD = mstObj.type === 'cccd' || mstObj.type === 'cmnd';
+  statusEl.className = 'mst-status-loading';
+  statusEl.textContent = isCCCD ? '🔍 Đang tra CCCD...' : '🔍 Đang tra MST...';
+
+  // Timeout 5 giây — đủ cho API, không chờ lâu
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 9000);
+  const timeout = setTimeout(() => controller.abort(), 5000);
   let found = false;
 
   try {
     if (isCCCD) {
-      // Tra cứu CCCD
       const result = await tryLookupCCCD(mstObj.root, controller.signal);
       if (result) { setDonvi(result.name, result.addr); found = true; }
     } else {
-      // Tra cứu MST, thử từng candidate
-      for (const code of mstObj.candidates) {
-        if (found) break;
-        const result = await tryLookupOneMST(code, controller.signal);
-        if (result) { setDonvi(result.name, result.addr); found = true; }
+      // Thử tất cả candidates song song — ai tìm được trước
+      const results = await Promise.allSettled(
+        mstObj.candidates.map(code => tryLookupOneMST(code, controller.signal))
+      );
+      for (const r of results) {
+        if (r.status === 'fulfilled' && r.value) {
+          setDonvi(r.value.name, r.value.addr);
+          found = true;
+          break;
+        }
       }
     }
-  } catch (e) {
-    // AbortError hoặc lỗi khác
-  } finally {
-    clearTimeout(timeout);
-  }
+  } catch {}
+  finally { clearTimeout(timeout); }
 
   if (!found) {
-    const statusEl = document.getElementById('mst-lookup-status');
     statusEl.className = 'mst-status-warn';
     if (isCCCD) {
-      // CCCD thường không tra được tự động — hướng dẫn thủ công
-      statusEl.innerHTML = `⚠ CCCD hộ KD chưa tra tự động được &nbsp;<button onclick="openCCCDPopup('${mstObj.display}')" style="background:var(--orange);color:white;border:none;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:700">🔗 Tra thủ công</button>`;
+      statusEl.innerHTML = `⚠ Chưa tra tự động được &nbsp;
+        <button onclick="openCCCDPopup('${mstObj.display}')"
+          style="background:var(--orange);color:white;border:none;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:700">
+          🔗 Tra thủ công
+        </button>`;
     } else {
-      statusEl.innerHTML = `⚠ Không tự tra được &nbsp;<button onclick="openMstPopup('${mstObj.display}')" style="background:var(--accent);color:white;border:none;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:700">🔗 Mở tra cứu</button>`;
+      statusEl.innerHTML = `⚠ Không tìm thấy &nbsp;
+        <button onclick="openMstPopup('${mstObj.display}')"
+          style="background:var(--accent);color:white;border:none;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:700">
+          🔗 Mở masothue.com
+        </button>`;
     }
   }
 
