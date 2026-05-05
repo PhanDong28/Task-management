@@ -144,7 +144,7 @@ tr:hover td{background:rgba(37,99,235,.04)}
 .period-tab.active{background:var(--accent);color:white}
 
 .dv-stat-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
-.dv-stat-table td,.dv-stat-table th{padding:8px 12px;border-bottom:1px solid var(--surface2)}
+.dv-stat-table td,.dv-stat-table th{padding:6px 10px;border-bottom:1px solid var(--surface2)}
 .dv-stat-table th{font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px}
 .dv-stat-table tr:last-child td{border-bottom:none;font-weight:700}
 
@@ -432,7 +432,7 @@ textarea { line-height: 1.6; }
 
   <div class="stats-grid" id="stat-cards"></div>
 
-  <div style="display:grid;grid-template-columns:240px 1fr;gap:16px;margin-bottom:16px;align-items:start">
+  <div style="display:grid;grid-template-columns:260px 1fr;gap:16px;margin-bottom:16px;align-items:start">
     <div class="card">
       <div class="card-title">📊 Theo dịch vụ</div>
       <div id="dv-stat-detail"></div>
@@ -451,6 +451,17 @@ textarea { line-height: 1.6; }
     <div class="card">
       <div class="card-title">👤 Theo người làm</div>
       <div id="by-person"></div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+    <div class="card">
+      <div class="card-title">📞 Top SĐT thường gọi</div>
+      <div id="top-sdt"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">🕐 Phân bổ theo buổi trong ngày</div>
+      <div id="by-buoi"></div>
     </div>
   </div>
   <div class="card" style="margin-bottom:16px">
@@ -1559,6 +1570,86 @@ function renderStats(period){
         </div>
         <div style="display:flex;gap:4px;flex-wrap:wrap">${dvChips}</div>
       </div>`;
+    }).join('');
+  }
+
+  // ── THỐNG KÊ THEO SĐT ──
+  const sdtEl = document.getElementById('top-sdt');
+  if (sdtEl) {
+    const sdtCnt = {};
+    data.forEach(r => {
+      if (!r.sdt || r.sdt.trim().length < 8) return;
+      const key = r.sdt.trim();
+      if (!sdtCnt[key]) sdtCnt[key] = { sdt: key, donvi: r.donvi, count: 0 };
+      sdtCnt[key].count++;
+    });
+    const topSdt = Object.values(sdtCnt).sort((a, b) => b.count - a.count).slice(0, 8);
+    if (!topSdt.length) {
+      sdtEl.innerHTML = '<p style="color:var(--text-dim);font-size:12px">Không có dữ liệu SĐT</p>';
+    } else {
+      const maxS = topSdt[0].count;
+      sdtEl.innerHTML = topSdt.map((s, i) => `
+        <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--surface2)">
+          <span style="font-size:11px;color:var(--text-dim);min-width:16px;text-align:right">${i+1}</span>
+          <div style="flex:1;min-width:0">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent-light);font-weight:700">${s.sdt}</div>
+            <div style="font-size:11px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.donvi||''}</div>
+          </div>
+          <div style="background:var(--surface3);border-radius:3px;height:6px;width:60px;flex-shrink:0">
+            <div style="height:6px;border-radius:3px;background:var(--cyan);width:${Math.round(s.count/maxS*100)}%"></div>
+          </div>
+          <span style="font-size:12px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--cyan);min-width:20px;text-align:right">${s.count}</span>
+        </div>`).join('');
+    }
+  }
+
+  // ── THỐNG KÊ THEO BUỔI ──
+  const buoiEl = document.getElementById('by-buoi');
+  if (buoiEl) {
+    const buoiCnt = { sang: 0, chieu: 0, toi: 0, khac: 0 };
+    const buoiDV = { sang: {}, chieu: {}, toi: {}, khac: {} };
+    data.forEach(r => {
+      if (!r.gio) { buoiCnt.khac++; return; }
+      const [hh, mm] = r.gio.split(':').map(Number);
+      const totalMin = hh * 60 + (mm || 0);
+      let buoi;
+      if (totalMin >= 7*60+30 && totalMin < 11*60+30) buoi = 'sang';
+      else if (totalMin >= 13*60+30 && totalMin < 17*60+30) buoi = 'chieu';
+      else if (totalMin >= 17*60+30 && totalMin < 22*60) buoi = 'toi';
+      else buoi = 'khac';
+      buoiCnt[buoi]++;
+      buoiDV[buoi][r.dichvu] = (buoiDV[buoi][r.dichvu] || 0) + 1;
+    });
+
+    const buoiList = [
+      { key: 'sang',  label: ' Buổi sáng',  time: '7:30 – 11:30', color: '#f59e0b' },
+      { key: 'chieu', label: 'Buổi chiều', time: '13:30 – 17:30', color: '#3b82f6' },
+      { key: 'toi',   label: 'Buổi tối',   time: '17:30 – 22:00', color: '#a855f7' },
+      { key: 'khac',  label: 'Ngoài giờ',  time: 'Còn lại',       color: '#6b7280' },
+    ];
+    const totalBuoi = Object.values(buoiCnt).reduce((a,b) => a+b, 0) || 1;
+    const maxBuoi = Math.max(...Object.values(buoiCnt), 1);
+
+    buoiEl.innerHTML = buoiList.map(b => {
+      const cnt = buoiCnt[b.key];
+      const pct = Math.round(cnt / totalBuoi * 100);
+      const dvChips = DV_LIST.filter(d => buoiDV[b.key]?.[d])
+        .map(d => `<span class="dv-chip ${DV_CHIP[d]}">${DV_LABELS[d]} ${buoiDV[b.key][d]}</span>`).join('');
+      return `
+        <div style="padding:10px 0;border-bottom:1px solid var(--surface2)">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:5px">
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:700;color:var(--text)">${b.label}</div>
+              <div style="font-size:10px;color:var(--text-dim)">${b.time}</div>
+            </div>
+            <span style="font-size:22px;font-weight:800;font-family:'JetBrains Mono',monospace;color:${b.color}">${cnt}</span>
+            <span style="font-size:11px;color:var(--text-muted);min-width:32px;text-align:right">${pct}%</span>
+          </div>
+          <div style="background:var(--surface3);border-radius:4px;height:6px;width:100%;margin-bottom:5px">
+            <div style="height:6px;border-radius:4px;background:${b.color};width:${Math.round(cnt/maxBuoi*100)}%;transition:width .3s"></div>
+          </div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap">${dvChips}</div>
+        </div>`;
     }).join('');
   }
 // Render danh sách khách có ghi chú
