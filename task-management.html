@@ -6,6 +6,7 @@
 <title>Nhật Ký Công Việc – Phan Duy Đông</title>
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import {
@@ -423,12 +424,22 @@ textarea { line-height: 1.6; }
 
 <!-- PAGE 3: THỐNG KÊ -->
 <div class="page" id="page-thongke">
-  <div class="period-tabs">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+  <div class="period-tabs" style="margin-bottom:0">
     <button class="period-tab active" onclick="setStatPeriod('day',this)">Hôm nay</button>
     <button class="period-tab" onclick="setStatPeriod('week',this)">Tuần này</button>
     <button class="period-tab" onclick="setStatPeriod('month',this)">Tháng này</button>
     <button class="period-tab" onclick="setStatPeriod('all',this)">Tất cả</button>
   </div>
+  <div style="display:flex;gap:8px;margin-left:auto">
+    <button class="btn btn-success btn-sm" onclick="exportStatExcel('week')" style="background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.4);color:var(--green);font-weight:700">
+      📊 Excel tuần này
+    </button>
+    <button class="btn btn-success btn-sm" onclick="exportStatExcel('month')" style="background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.4);color:var(--accent-light);font-weight:700">
+      📊 Excel tháng này
+    </button>
+  </div>
+</div>
 
   <div class="stats-grid" id="stat-cards"></div>
 
@@ -2308,6 +2319,236 @@ function renderGhichuBadge(mst, donvi) {
   const gc = getGhichu(mst, donvi);
   if (!gc) return '';
   return `<span title="${gc}" style="display:inline-flex;align-items:center;gap:3px;background:rgba(234,179,8,.15);color:var(--yellow);border:1px solid rgba(234,179,8,.3);border-radius:4px;padding:2px 7px;font-size:10px;font-weight:700;cursor:help;white-space:nowrap;max-width:140px;overflow:hidden;text-overflow:ellipsis">📌 ${gc.length>20?gc.slice(0,20)+'…':gc}</span>`;
+}
+
+  // ═══════════════════════════════════════════════
+// EXPORT THỐNG KÊ RA EXCEL (NHIỀU SHEET)
+// ═══════════════════════════════════════════════
+function exportStatExcel(period) {
+  if (typeof XLSX === 'undefined') { toast('Thư viện XLSX chưa tải', 'error'); return; }
+
+  // ── Xác định khoảng thời gian ──
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+  let fromStr, toStr, labelPeriod;
+
+  if (period === 'week') {
+    const mon = getMonday(today);
+    const sun = new Date(mon); sun.setDate(sun.getDate() + 6);
+    fromStr = mon.toISOString().split('T')[0];
+    toStr   = sun.toISOString().split('T')[0];
+    const wNum = Math.ceil(today.getDate() / 7);
+    labelPeriod = `Tuần ${wNum} tháng ${String(today.getMonth()+1).padStart(2,'0')}/${today.getFullYear()}`;
+  } else {
+    fromStr = todayStr.slice(0,7) + '-01';
+    toStr   = todayStr.slice(0,7) + '-31';
+    labelPeriod = `Tháng ${String(today.getMonth()+1).padStart(2,'0')}/${today.getFullYear()}`;
+  }
+
+  const data = records.filter(r => r.ngay >= fromStr && r.ngay <= toStr);
+  if (!data.length) { toast('Không có dữ liệu trong khoảng này', 'error'); return; }
+
+  const wb = XLSX.utils.book_new();
+  const ngayXuat = `${today.getDate()}/${String(today.getMonth()+1).padStart(2,'0')}/${today.getFullYear()}`;
+
+  // ════════════════════════════════
+  // SHEET 1: TỔNG QUAN
+  // ════════════════════════════════
+  const totalDV = {};
+  DV_LIST.forEach(d => totalDV[d] = 0);
+  data.forEach(r => { if (totalDV[r.dichvu] !== undefined) totalDV[r.dichvu]++; });
+  const total = data.length;
+
+  const lastMonDate = new Date(getMonday(today));
+  lastMonDate.setDate(lastMonDate.getDate() - 7);
+  const lastSun = new Date(lastMonDate); lastSun.setDate(lastSun.getDate() + 6);
+  const lastWeekData = records.filter(r =>
+    r.ngay >= lastMonDate.toISOString().split('T')[0] &&
+    r.ngay <= lastSun.toISOString().split('T')[0]
+  );
+  const lastTotal = lastWeekData.length;
+  const delta = total - lastTotal;
+  const deltaStr = delta === 0 ? 'Không đổi' : (delta > 0 ? `+${delta} ▲` : `${delta} ▼`);
+
+  const s1 = [
+    ['BÁO CÁO THỐNG KÊ HỖ TRỢ KỸ THUẬT – VISNAM'],
+    [`Kỳ: ${labelPeriod}`, '', `Ngày xuất: ${ngayXuat}`],
+    ['Người thực hiện: Phan Duy Đông'],
+    [],
+    ['I. TỔNG QUAN'],
+    ['Chỉ tiêu', 'Giá trị', 'Ghi chú'],
+    ['Tổng ca hỗ trợ', total, `Từ ${fromStr.split('-').reverse().join('/')} đến ${toStr.split('-').reverse().join('/')}`],
+    ['So tuần trước', deltaStr, `Tuần trước: ${lastTotal} ca`],
+    ['BHXH điện tử', totalDV['BHXH'], `${total ? Math.round(totalDV['BHXH']/total*100) : 0}%`],
+    ['Hóa đơn điện tử (HĐ)', totalDV['HD'], `${total ? Math.round(totalDV['HD']/total*100) : 0}%`],
+    ['Chữ ký số (CKS)', totalDV['CKS'], `${total ? Math.round(totalDV['CKS']/total*100) : 0}%`],
+    ['Hỗ trợ khác', totalDV['Khac'], `${total ? Math.round(totalDV['Khac']/total*100) : 0}%`],
+    [],
+    ['II. PHÂN BỔ THEO DỊCH VỤ'],
+    ['Dịch vụ', 'Số ca', 'Tỷ lệ (%)'],
+    ...DV_LIST.map(d => [
+      DV_LABELS[d],
+      totalDV[d],
+      total ? +(totalDV[d]/total*100).toFixed(1) : 0
+    ]),
+    ['TỔNG CỘNG', total, '100%'],
+  ];
+  const ws1 = XLSX.utils.aoa_to_sheet(s1);
+  ws1['!cols'] = [{wch:28},{wch:16},{wch:32}];
+  // Merge tiêu đề
+  ws1['!merges'] = [
+    {s:{r:0,c:0},e:{r:0,c:2}},
+    {s:{r:4,c:0},e:{r:4,c:2}},
+    {s:{r:13,c:0},e:{r:13,c:2}},
+  ];
+  XLSX.utils.book_append_sheet(wb, ws1, '1. Tổng quan');
+
+  // ════════════════════════════════
+  // SHEET 2: CHI TIẾT THEO NGÀY
+  // ════════════════════════════════
+  const dayCnt = {};
+  data.forEach(r => {
+    if (!dayCnt[r.ngay]) dayCnt[r.ngay] = { total:0, BHXH:0, HD:0, CKS:0, Khac:0 };
+    dayCnt[r.ngay].total++;
+    if (dayCnt[r.ngay][r.dichvu] !== undefined) dayCnt[r.ngay][r.dichvu]++;
+  });
+  const days7 = ['CN','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'];
+
+  const s2 = [
+    [`CHI TIẾT THEO NGÀY – ${labelPeriod}`],
+    [],
+    ['Ngày', 'Thứ', 'BHXH', 'HĐ', 'CKS', 'Khác', 'Tổng', 'Ghi chú'],
+    ...Object.keys(dayCnt).sort().map(d => {
+      const o = dayCnt[d];
+      const dt = new Date(d);
+      const [,mm,dd] = d.split('-');
+      return [`${dd}/${mm}`, days7[dt.getDay()], o.BHXH||0, o.HD||0, o.CKS||0, o.Khac||0, o.total, ''];
+    }),
+    [],
+    ['TỔNG', '',
+      Object.values(dayCnt).reduce((s,o)=>s+o.BHXH,0),
+      Object.values(dayCnt).reduce((s,o)=>s+o.HD,0),
+      Object.values(dayCnt).reduce((s,o)=>s+o.CKS,0),
+      Object.values(dayCnt).reduce((s,o)=>s+o.Khac,0),
+      total, ''
+    ],
+  ];
+  const ws2 = XLSX.utils.aoa_to_sheet(s2);
+  ws2['!cols'] = [{wch:10},{wch:8},{wch:8},{wch:8},{wch:8},{wch:8},{wch:8},{wch:20}];
+  ws2['!merges'] = [{s:{r:0,c:0},e:{r:0,c:7}}];
+  XLSX.utils.book_append_sheet(wb, ws2, '2. Theo ngày');
+
+  // ════════════════════════════════
+  // SHEET 3: THEO DỊCH VỤ + KHÁCH HÀNG
+  // ════════════════════════════════
+  // Nhóm nội dung theo dịch vụ
+  const dvDetail = {};
+  DV_LIST.forEach(d => dvDetail[d] = []);
+  data.forEach(r => {
+    if (dvDetail[r.dichvu]) {
+      dvDetail[r.dichvu].push([
+        r.ngay ? r.ngay.split('-').reverse().join('/') : '',
+        r.gio ? r.gio.slice(0,5) : '',
+        r.donvi || '',
+        r.mst || '',
+        r.sdt || '',
+        r.noidung || '',
+      ]);
+    }
+  });
+
+  const s3 = [`PHÂN TÍCH THEO DỊCH VỤ – ${labelPeriod}`];
+  const s3Rows = [[s3[0]], []];
+
+  DV_LIST.forEach(dv => {
+    if (!dvDetail[dv].length) return;
+    s3Rows.push([`▶ ${DV_LABELS[dv].toUpperCase()} — ${dvDetail[dv].length} ca`]);
+    s3Rows.push(['Ngày', 'Giờ', 'Tên đơn vị', 'MST/CCCD', 'SĐT', 'Nội dung hỗ trợ']);
+    dvDetail[dv].forEach(row => s3Rows.push(row));
+    s3Rows.push([]);
+  });
+
+  // Top khách hàng
+  const custCnt = {};
+  data.forEach(r => {
+    if (!r.donvi) return;
+    custCnt[r.donvi] = (custCnt[r.donvi] || 0) + 1;
+  });
+  const topCust = Object.entries(custCnt).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  s3Rows.push([]);
+  s3Rows.push(['TOP KHÁCH HÀNG THƯỜNG GẶP']);
+  s3Rows.push(['#', 'Tên đơn vị', 'Số lần', 'Ghi chú']);
+  topCust.forEach(([name, cnt], i) => s3Rows.push([i+1, name, cnt, cnt > 2 ? 'Hay gặp ⚠' : '']));
+
+  const ws3 = XLSX.utils.aoa_to_sheet(s3Rows);
+  ws3['!cols'] = [{wch:10},{wch:8},{wch:30},{wch:16},{wch:14},{wch:40}];
+  ws3['!merges'] = [{s:{r:0,c:0},e:{r:0,c:5}}];
+  XLSX.utils.book_append_sheet(wb, ws3, '3. Theo dịch vụ');
+
+  // ════════════════════════════════
+  // SHEET 4: HEATMAP GIỜ CAO ĐIỂM
+  // ════════════════════════════════
+  const hourCnt = Array(24).fill(0);
+  const hourDV  = Array.from({length:24}, ()=>({BHXH:0,HD:0,CKS:0,Khac:0}));
+  data.forEach(r => {
+    if (!r.gio) return;
+    const hh = parseInt(r.gio.split(':')[0]);
+    if (hh >= 0 && hh < 24) {
+      hourCnt[hh]++;
+      if (hourDV[hh][r.dichvu] !== undefined) hourDV[hh][r.dichvu]++;
+    }
+  });
+  const totalWithGio = hourCnt.reduce((a,b)=>a+b,0);
+
+  // Chỉ lấy giờ làm việc 7–21
+  const workHours = Array.from({length:15}, (_,i)=>i+7);
+  const maxH = Math.max(...workHours.map(h=>hourCnt[h]), 1);
+
+  const s4rows = [
+    [`HEATMAP GIỜ CAO ĐIỂM – ${labelPeriod}`],
+    [`Tổng bản ghi có giờ: ${totalWithGio} / ${total}`],
+    [],
+    ['Giờ', 'Tổng ca', 'BHXH', 'HĐ', 'CKS', 'Khác', 'Mức độ', 'Biểu đồ (█)'],
+    ...workHours.map(h => {
+      const cnt = hourCnt[h];
+      const pct = Math.round(cnt / maxH * 100);
+      const bar = '█'.repeat(Math.round(pct / 10));
+      const level = pct >= 75 ? '🔴 Đỉnh điểm' : pct >= 50 ? '🟠 Cao' : pct >= 25 ? '🟡 Trung bình' : cnt > 0 ? '🟢 Ít' : '—';
+      return [
+        `${String(h).padStart(2,'0')}:00`,
+        cnt,
+        hourDV[h].BHXH || 0,
+        hourDV[h].HD   || 0,
+        hourDV[h].CKS  || 0,
+        hourDV[h].Khac || 0,
+        level,
+        bar || (cnt > 0 ? '▏' : ''),
+      ];
+    }),
+    [],
+    ['TỔNG', totalWithGio,
+      workHours.reduce((s,h)=>s+hourDV[h].BHXH,0),
+      workHours.reduce((s,h)=>s+hourDV[h].HD,0),
+      workHours.reduce((s,h)=>s+hourDV[h].CKS,0),
+      workHours.reduce((s,h)=>s+hourDV[h].Khac,0),
+      '', ''
+    ],
+    [],
+    ['GIỜ CAO ĐIỂM NHẤT', '', `${String(workHours.reduce((best,h)=>hourCnt[h]>hourCnt[best]?h:best,7)).padStart(2,'0')}:00 – ${String(workHours.reduce((best,h)=>hourCnt[h]>hourCnt[best]?h:best,7)+1).padStart(2,'0')}:00`, `${Math.max(...workHours.map(h=>hourCnt[h]))} ca`],
+  ];
+
+  const ws4 = XLSX.utils.aoa_to_sheet(s4rows);
+  ws4['!cols'] = [{wch:8},{wch:8},{wch:8},{wch:8},{wch:8},{wch:8},{wch:14},{wch:20}];
+  ws4['!merges'] = [
+    {s:{r:0,c:0},e:{r:0,c:7}},
+    {s:{r:1,c:0},e:{r:1,c:7}},
+  ];
+  XLSX.utils.book_append_sheet(wb, ws4, '4. Heatmap giờ');
+
+  // ── Xuất file ──
+  const fname = `ThongKe_Dong_${period === 'week' ? 'Tuan' : 'Thang'}_${todayStr}.xlsx`;
+  XLSX.writeFile(wb, fname);
+  toast(`✓ Đã xuất ${fname}`, 'success');
 }
 // ═══════════════════════════════════════════════
 // TOAST
