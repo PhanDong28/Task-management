@@ -654,6 +654,14 @@ textarea { line-height: 1.6; }
             <input type="time" id="edit-gio" step="1">
           </div>
           <div class="form-group span2">
+            <label style="display:flex;align-items:center;gap:6px">
+              Ghi chú khách hàng
+              <span style="font-size:10px;background:rgba(234,179,8,.15);color:var(--yellow);padding:2px 7px;border-radius:4px;font-weight:700;text-transform:none;letter-spacing:0">📌 Lưu vĩnh viễn</span>
+            </label>
+            <input type="text" id="edit-ghichu" placeholder="VD: Khách khó tính · Hay gọi buổi sáng..."
+              style="width:100%;background:rgba(234,179,8,.06);border:1px solid rgba(234,179,8,.3);border-radius:6px;padding:9px 12px;color:var(--text);font-family:inherit;font-size:13px;outline:none">
+          </div>
+          <div class="form-group span2">
             <label>Nội dung hỗ trợ</label>
             <textarea id="edit-noidung" rows="3" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px 12px;color:var(--text);font-family:inherit;font-size:13px;outline:none;resize:vertical;transition:border-color .2s" placeholder="Mô tả vấn đề và cách xử lý..."></textarea>
           </div>
@@ -880,6 +888,9 @@ function openEditModal(fbId){
   document.getElementById('edit-ngay').value=rec.ngay||'';
   document.getElementById('edit-gio').value=rec.gio||'';
   document.getElementById('edit-noidung').value=rec.noidung||'';
+  // Load ghi chú khách hàng
+  const gcEdit = getGhichu(rec.mst||'', rec.donvi||'');
+  document.getElementById('edit-ghichu').value = gcEdit;
 
   // Set dịch vụ
   const dv=rec.dichvu||'';
@@ -922,6 +933,10 @@ async function saveEdit(){
 
   try{
     await window._fb.updateRecord(fbId,updateData);
+    // Lưu ghi chú khách hàng
+    const gcVal = document.getElementById('edit-ghichu').value.trim();
+    const gcKey = updateData.mst || updateData.donvi;
+    if (gcKey) saveGhichu(gcKey, gcVal);
     document.getElementById('edit-modal').style.display='none';
     toast('✓ Đã cập nhật bản ghi!','success');
   }catch(err){
