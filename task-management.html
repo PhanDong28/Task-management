@@ -1241,15 +1241,10 @@ async function traCuuMST() {
 
   if (!found) {
     statusEl.className = 'mst-status-warn';
-          style="background:var(--orange);color:white;border:none;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:700">
-          🔗 Tra thủ công
-        </button>`;
+    if (isCCCD) {
+      statusEl.innerHTML = `⚠ Chưa tra tự động được &nbsp;<button onclick="openCCCDPopup('${mstObj.display}')" style="background:var(--orange);color:white;border:none;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:700">🔗 Tra thủ công</button>`;
     } else {
-      statusEl.innerHTML = `⚠ Không tìm thấy &nbsp;
-        <button onclick="openMstPopup('${mstObj.display}')"
-          style="background:var(--accent);color:white;border:none;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:700">
-          🔗 Mở masothue.com
-        </button>`;
+      statusEl.innerHTML = `⚠ Không tìm thấy &nbsp;<button onclick="openMstPopup('${mstObj.display}')" style="background:var(--accent);color:white;border:none;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:700">🔗 Mở masothue.com</button>`;
     }
   }
 
