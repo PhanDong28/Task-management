@@ -497,14 +497,14 @@ textarea { line-height: 1.6; }
   </div>
 </div>
 
-<!-- PAGE 4: BÁO CÁO -->
+<!-- PAGE 4: BÁO CÁO AI -->
 <div class="page" id="page-baocao">
 
-  <!-- ── TOOLBAR ── -->
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+  <!-- TOOLBAR -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
 
     <select id="rpt-loai" onchange="onReportTypeChange()"
-      style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-family:inherit;font-size:13px;outline:none;font-weight:600">
+      style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-family:inherit;font-size:13px;outline:none;font-weight:600;height:36px">
       <option value="tuan">📅 Báo cáo tuần</option>
       <option value="thang">🗓 Báo cáo tháng</option>
     </select>
@@ -512,97 +512,103 @@ textarea { line-height: 1.6; }
     <div id="rpt-tuan-opts" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
       <div style="display:flex;flex-direction:column;gap:3px">
         <span style="font-size:10px;color:var(--text-dim);font-weight:700;text-transform:uppercase">Từ ngày</span>
-        <input type="date" id="rpt-from" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text);font-family:inherit;font-size:13px;outline:none">
+        <input type="date" id="rpt-from" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:0 10px;color:var(--text);font-family:inherit;font-size:13px;outline:none;height:34px">
       </div>
       <div style="display:flex;flex-direction:column;gap:3px">
         <span style="font-size:10px;color:var(--text-dim);font-weight:700;text-transform:uppercase">Đến ngày</span>
-        <input type="date" id="rpt-to" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text);font-family:inherit;font-size:13px;outline:none">
+        <input type="date" id="rpt-to" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:0 10px;color:var(--text);font-family:inherit;font-size:13px;outline:none;height:34px">
       </div>
       <div style="display:flex;flex-direction:column;gap:3px">
         <span style="font-size:10px;color:var(--text-dim);font-weight:700;text-transform:uppercase">Số tuần</span>
-        <input type="text" id="rpt-sotuan" placeholder="VD: 18"
-          style="width:90px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text);font-family:inherit;font-size:13px;outline:none">
+        <input type="text" id="rpt-sotuan" placeholder="VD: 18" style="width:80px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:0 10px;color:var(--text);font-family:inherit;font-size:13px;outline:none;height:34px">
       </div>
     </div>
 
     <div id="rpt-thang-opts" style="display:none;flex-direction:column;gap:3px">
       <span style="font-size:10px;color:var(--text-dim);font-weight:700;text-transform:uppercase">Tháng / Năm</span>
-      <input type="month" id="rpt-month" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text);font-family:inherit;font-size:13px;outline:none">
+      <input type="month" id="rpt-month" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:0 10px;color:var(--text);font-family:inherit;font-size:13px;outline:none;height:34px">
     </div>
 
-    <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:200px">
-      <span style="font-size:10px;color:var(--text-dim);font-weight:700;text-transform:uppercase">Kính gửi</span>
-      <input type="text" id="rpt-kinggui" value="Ban Giám đốc / Trưởng bộ phận"
-        style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text);font-family:inherit;font-size:13px;outline:none;width:100%">
-    </div>
+    <select id="rpt-audience"
+      style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:0 12px;color:var(--text);font-family:inherit;font-size:13px;outline:none;font-weight:600;height:36px">
+      <option value="bgd">🏢 Gửi BGĐ (trang trọng)</option>
+      <option value="noidung">👥 Nội bộ (súc tích)</option>
+    </select>
 
-    <div style="display:flex;gap:8px;align-items:center;flex-shrink:0;margin-left:auto">
+    <div style="display:flex;gap:8px;margin-left:auto;align-items:center;flex-wrap:wrap">
       <div id="rpt-loading" style="display:none;align-items:center;gap:6px;font-size:12px;color:var(--text-muted)">
-        <div class="spinner"></div> Đang tổng hợp...
+        <div class="spinner"></div> AI đang phân tích...
       </div>
-      <button class="btn btn-purple" onclick="genReportPreview()" style="white-space:nowrap;padding:10px 20px">
-        ✦ Tạo báo cáo
+      <button class="btn btn-purple" onclick="genAIReport('firebase')" style="white-space:nowrap">
+        ✦ Tạo từ dữ liệu
       </button>
-      <button class="btn btn-success btn-sm" onclick="exportDocx()" style="white-space:nowrap">
+      <label style="display:inline-flex;align-items:center;gap:6px;padding:0 14px;height:34px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text-muted);cursor:pointer;font-size:13px;font-weight:700;white-space:nowrap">
+        📂 Upload Excel
+        <input type="file" id="rpt-excel-file" accept=".xlsx,.xls" style="display:none" onchange="genAIReport('excel')">
+      </label>
+      <button class="btn btn-success btn-sm" onclick="exportReportDocx()" style="white-space:nowrap">
         ⬇ Xuất .docx
       </button>
     </div>
   </div>
 
-  <!-- ── NỘI DUNG CHÍNH ── -->
-  <div style="display:grid;grid-template-columns:360px 1fr;gap:20px;align-items:start">
+  <!-- NỘI DUNG CHÍNH -->
+  <div style="display:grid;grid-template-columns:320px 1fr;gap:20px;align-items:start">
 
-    <!-- Cột trái: nhận xét + kế hoạch -->
+    <!-- CỘT TRÁI -->
     <div style="display:flex;flex-direction:column;gap:12px">
 
       <div class="card" style="padding:16px">
-        <div class="card-title" style="margin-bottom:10px">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-          IV. Đánh giá &amp; Đề xuất
+        <div class="card-title" style="margin-bottom:10px">✏️ Chỉnh sửa nhanh</div>
+        <div style="margin-bottom:10px">
+          <label style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">Kính gửi</label>
+          <input type="text" id="rpt-kinggui" value="Ban Giám đốc Công ty"
+            style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:0 10px;color:var(--text);font-family:inherit;font-size:13px;outline:none;height:34px">
         </div>
-        <textarea class="textarea-report" id="rpt-iv" rows="7" style="font-size:12.5px">- Thuận lợi: Quy trình hỗ trợ cơ bản được xử lý kịp thời.
+        <div style="margin-bottom:10px">
+          <label style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">IV. Đánh giá &amp; Đề xuất</label>
+          <textarea class="textarea-report" id="rpt-iv" rows="5" style="font-size:12px;width:100%">- Thuận lợi: Quy trình hỗ trợ cơ bản được xử lý kịp thời.
 - Khó khăn: Một số thời điểm hệ thống BHXH phát sinh lỗi kéo dài thời gian xử lý.
 - Đề xuất: Tiếp tục theo dõi, cập nhật nghiệp vụ mới từ cơ quan thuế và BHXH.</textarea>
-      </div>
-
-      <div class="card" style="padding:16px">
-        <div class="card-title" style="margin-bottom:10px">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          V. Kế hoạch tiếp theo
         </div>
-        <textarea class="textarea-report" id="rpt-v" rows="7" style="font-size:12.5px">- Duy trì hỗ trợ khách hàng về hóa đơn điện tử, BHXH và chữ ký số.
+        <div>
+          <label style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">V. Kế hoạch tiếp theo</label>
+          <textarea class="textarea-report" id="rpt-v" rows="5" style="font-size:12px;width:100%">- Duy trì hỗ trợ khách hàng về hóa đơn điện tử, BHXH và chữ ký số.
 - Theo dõi, kiểm tra và xử lý các lỗi phát sinh trên hệ thống.
 - Hỗ trợ nghiệp vụ cho bộ phận CSKH và khách hàng mới.</textarea>
+        </div>
       </div>
 
-      <!-- Gợi ý phím tắt nhỏ -->
-      <div style="background:rgba(37,99,235,.08);border:1px solid rgba(37,99,235,.2);border-radius:8px;padding:12px 14px;font-size:11px;color:var(--text-muted);line-height:1.8">
-        <div style="font-weight:700;color:var(--accent-light);margin-bottom:4px">💡 Hướng dẫn nhanh</div>
-        <div>1. Chọn loại báo cáo + khoảng thời gian</div>
-        <div>2. Nhấn <strong style="color:var(--purple)">✦ Tạo báo cáo</strong> → AI tự tổng hợp</div>
-        <div>3. Chỉnh sửa mục IV, V nếu cần</div>
-        <div>4. Nhấn <strong style="color:var(--green)">⬇ Xuất .docx</strong> để tải về</div>
+      <div style="background:rgba(168,85,247,.08);border:1px solid rgba(168,85,247,.2);border-radius:8px;padding:12px 14px;font-size:11px;color:var(--text-muted);line-height:1.9">
+        <div style="font-weight:700;color:#c084fc;margin-bottom:6px">⚡ 2 cách tạo báo cáo</div>
+        <div><strong style="color:var(--text)">Cách 1 — Tự động:</strong></div>
+        <div style="padding-left:10px">① Chọn tuần/tháng → ② Chọn đối tượng → ③ Nhấn <strong style="color:#c084fc">✦ Tạo từ dữ liệu</strong></div>
+        <div style="margin-top:6px"><strong style="color:var(--text)">Cách 2 — Upload Excel:</strong></div>
+        <div style="padding-left:10px">① Xuất Excel ở tab Thống kê → ② Nhấn <strong style="color:var(--green)">📂 Upload Excel</strong> → ③ AI đọc &amp; viết</div>
+        <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(168,85,247,.2)">④ Chỉnh sửa mục IV, V nếu cần → ⑤ <strong style="color:var(--green)">⬇ Xuất .docx</strong></div>
+      </div>
+
+      <div class="card" style="padding:16px" id="rpt-data-summary" style="display:none">
+        <div class="card-title" style="margin-bottom:8px">📊 Dữ liệu đang dùng</div>
+        <div id="rpt-data-info" style="font-size:12px;color:var(--text-muted);line-height:1.8"></div>
       </div>
     </div>
 
-    <!-- Cột phải: preview -->
+    <!-- CỘT PHẢI: PREVIEW -->
     <div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.6px">
-          Xem trước báo cáo
-        </div>
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.6px">Xem trước báo cáo</div>
         <div id="rpt-preview-label" style="font-size:11px;color:var(--text-dim)"></div>
       </div>
       <div class="report-preview" id="rpt-preview" style="min-height:640px">
         <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:300px;gap:12px;color:var(--text-dim)">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".4"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-          <p style="font-size:13px">Nhấn <strong style="color:var(--purple)">✦ Tạo báo cáo</strong> để tạo nội dung</p>
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".4"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <p style="font-size:13px">Nhấn <strong style="color:#c084fc">✦ Tạo từ dữ liệu</strong> hoặc upload Excel để bắt đầu</p>
         </div>
       </div>
     </div>
 
   </div>
-</div>
 </div>
 
 <!-- ═══════════════════════════════════ EDIT MODAL ═══════════════════════════════════ -->
@@ -2557,6 +2563,525 @@ function toast(msg,type='success'){
   const el=document.getElementById('toast');
   el.textContent=msg;el.className='show '+type;
   setTimeout(()=>el.className='',3000);
+}
+  // ═══════════════════════════════════════════════
+// BÁO CÁO AI — CORE
+// ═══════════════════════════════════════════════
+
+// Biến lưu nội dung báo cáo hiện tại để xuất docx
+let _currentReportData = null;
+
+function onReportTypeChange(){
+  const t = document.getElementById('rpt-loai').value;
+  document.getElementById('rpt-tuan-opts').style.display = t==='tuan' ? 'flex' : 'none';
+  document.getElementById('rpt-thang-opts').style.display = t==='thang' ? 'flex' : 'none';
+}
+
+// ── ENTRY POINT ──
+async function genAIReport(source) {
+  const loading = document.getElementById('rpt-loading');
+  const preview = document.getElementById('rpt-preview');
+  loading.style.display = 'flex';
+  preview.innerHTML = '<div style="text-align:center;padding:80px 0;color:var(--text-dim)"><div class="spinner" style="width:24px;height:24px;margin:0 auto 12px"></div><p>AI đang phân tích dữ liệu và viết báo cáo...</p></div>';
+
+  try {
+    let statsPayload;
+    if (source === 'excel') {
+      statsPayload = await readExcelForAI();
+      if (!statsPayload) { loading.style.display='none'; return; }
+    } else {
+      statsPayload = buildStatsFromFirebase();
+      if (!statsPayload) { toast('Không có dữ liệu trong khoảng thời gian này','error'); loading.style.display='none'; return; }
+    }
+
+    // Cập nhật info box
+    const infoEl = document.getElementById('rpt-data-info');
+    const summaryCard = document.getElementById('rpt-data-summary');
+    if (infoEl && summaryCard) {
+      summaryCard.style.display = 'block';
+      infoEl.innerHTML = `
+        <div>📅 Kỳ: <strong>${statsPayload.labelPeriod}</strong></div>
+        <div>📊 Tổng ca: <strong style="color:var(--accent-light)">${statsPayload.total}</strong></div>
+        <div>🟢 BHXH: ${statsPayload.dvCnt.BHXH} &nbsp;🔵 HĐ: ${statsPayload.dvCnt.HD} &nbsp;🟣 CKS: ${statsPayload.dvCnt.CKS} &nbsp;⚪ Khác: ${statsPayload.dvCnt.Khac}</div>
+        <div>📅 Số ngày có data: ${statsPayload.numDays}</div>
+        <div style="color:var(--text-dim);font-size:10px;margin-top:4px">Nguồn: ${source==='excel'?'File Excel upload':'Firebase realtime'}</div>`;
+    }
+
+    await callAIAndRender(statsPayload);
+  } catch(e) {
+    preview.innerHTML = `<p style="color:var(--red);padding:20px">❌ Lỗi: ${e.message}</p>`;
+  }
+  loading.style.display = 'none';
+}
+
+// ── ĐỌC DỮ LIỆU TỪ FIREBASE ──
+function buildStatsFromFirebase() {
+  const type = document.getElementById('rpt-loai').value;
+  let fromStr, toStr, labelPeriod;
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+
+  if (type === 'tuan') {
+    fromStr = document.getElementById('rpt-from').value;
+    toStr   = document.getElementById('rpt-to').value;
+    if (!fromStr || !toStr) {
+      const mon = getMonday(today);
+      const sun = new Date(mon); sun.setDate(sun.getDate()+6);
+      fromStr = mon.toISOString().split('T')[0];
+      toStr   = sun.toISOString().split('T')[0];
+    }
+    const soTuan = document.getElementById('rpt-sotuan').value;
+    const m = toStr.slice(5,7), y = toStr.slice(0,4);
+    labelPeriod = `Tuần ${soTuan||'??'} – Tháng ${m}/${y}`;
+  } else {
+    const month = document.getElementById('rpt-month').value || todayStr.slice(0,7);
+    fromStr = month + '-01'; toStr = month + '-31';
+    labelPeriod = `Tháng ${month.slice(5,7)}/${month.slice(0,4)}`;
+  }
+
+  const data = records.filter(r => r.ngay >= fromStr && r.ngay <= toStr);
+  if (!data.length) return null;
+  return buildStatsPayload(data, labelPeriod, fromStr, toStr);
+}
+
+// ── ĐỌC EXCEL ──
+async function readExcelForAI() {
+  const fileInput = document.getElementById('rpt-excel-file');
+  const file = fileInput.files[0];
+  if (!file) { toast('Chưa chọn file Excel','error'); return null; }
+  if (typeof XLSX === 'undefined') { toast('Thư viện XLSX chưa tải','error'); return null; }
+
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const wb = XLSX.read(e.target.result, { type:'array' });
+        // Đọc sheet 1 (Tổng quan) và sheet 2 (Theo ngày)
+        const ws1 = wb.Sheets[wb.SheetNames[0]];
+        const ws2 = wb.Sheets[wb.SheetNames[1]];
+        const ws3 = wb.Sheets[wb.SheetNames[2]];
+        const ws4 = wb.Sheets[wb.SheetNames[3]];
+
+        const d1 = XLSX.utils.sheet_to_json(ws1, {header:1, defval:''});
+        const d2 = XLSX.utils.sheet_to_json(ws2, {header:1, defval:''});
+        const d3 = ws3 ? XLSX.utils.sheet_to_json(ws3, {header:1, defval:''}) : [];
+        const d4 = ws4 ? XLSX.utils.sheet_to_json(ws4, {header:1, defval:''}) : [];
+
+        // Parse tổng quan
+        let total=0, dvCnt={BHXH:0,HD:0,CKS:0,Khac:0}, labelPeriod='', fromStr='', toStr='', delta='';
+        d1.forEach(row => {
+          const label = String(row[0]||'').trim();
+          const val   = String(row[1]||'').trim();
+          if (label==='Tổng ca hỗ trợ')      { total = parseInt(val)||0; }
+          if (label==='BHXH điện tử')         { dvCnt.BHXH = parseInt(val)||0; }
+          if (label==='Hóa đơn điện tử (HĐ)'){ dvCnt.HD   = parseInt(val)||0; }
+          if (label==='Chữ ký số (CKS)')      { dvCnt.CKS  = parseInt(val)||0; }
+          if (label==='Hỗ trợ khác')          { dvCnt.Khac = parseInt(val)||0; }
+          if (label==='So tuần trước')         { delta = val; }
+          if (String(row[0]).includes('Kỳ:')) { labelPeriod = String(row[1]||'').replace('Kỳ:','').trim(); }
+        });
+
+        // Parse chi tiết ngày
+        const dayRows = [];
+        let inData = false;
+        d2.forEach(row => {
+          if (String(row[0]).toLowerCase()==='ngày') { inData=true; return; }
+          if (!inData || !row[0]) return;
+          const dayStr = String(row[0]).trim();
+          if (dayStr==='TỔNG') return;
+          dayRows.push({
+            ngay: dayStr,
+            thu:  String(row[1]||''),
+            BHXH: parseInt(row[2])||0,
+            HD:   parseInt(row[3])||0,
+            CKS:  parseInt(row[4])||0,
+            Khac: parseInt(row[5])||0,
+            total:parseInt(row[6])||0,
+          });
+        });
+
+        // Parse heatmap giờ
+        const hourRows = [];
+        let inHour = false;
+        d4.forEach(row => {
+          const cell = String(row[0]||'').trim();
+          if (cell==='Giờ') { inHour=true; return; }
+          if (!inHour || !cell || cell==='TỔNG') return;
+          if (/^\d{2}:00$/.test(cell)) {
+            hourRows.push({ gio: cell, total: parseInt(row[1])||0, level: String(row[6]||'') });
+          }
+        });
+
+        const peakHour = hourRows.reduce((best,h)=>h.total>best.total?h:best, {gio:'--',total:0});
+        const numDays = dayRows.length;
+
+        // Tóm tắt nội dung từ sheet 3
+        const contentLines = [];
+        d3.forEach(row => {
+          const line = String(row[0]||'').trim();
+          if (line.startsWith('▶') || row[5]) contentLines.push(line + (row[5]?' – '+row[5]:''));
+        });
+
+        const payload = {
+          labelPeriod, total, dvCnt, numDays, delta,
+          dayRows, hourRows, peakHour, contentLines,
+          fromStr, toStr,
+          source: 'excel'
+        };
+        resolve(payload);
+      } catch(err) {
+        toast('❌ Không đọc được file Excel: ' + err.message, 'error');
+        resolve(null);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+// ── BUILD PAYLOAD TỪ RECORDS ──
+function buildStatsPayload(data, labelPeriod, fromStr, toStr) {
+  const dvCnt = {BHXH:0,HD:0,CKS:0,Khac:0};
+  data.forEach(r => { if(dvCnt[r.dichvu]!==undefined) dvCnt[r.dichvu]++; });
+  const total = data.length;
+
+  // Ngày
+  const dayCntMap = {};
+  data.forEach(r => {
+    if (!dayCntMap[r.ngay]) dayCntMap[r.ngay]={total:0,BHXH:0,HD:0,CKS:0,Khac:0};
+    dayCntMap[r.ngay].total++;
+    if(dayCntMap[r.ngay][r.dichvu]!==undefined) dayCntMap[r.ngay][r.dichvu]++;
+  });
+  const dayRows = Object.entries(dayCntMap).sort().map(([d,o])=>{
+    const dt = new Date(d); const [,mm,dd]=d.split('-');
+    const days7=['CN','T2','T3','T4','T5','T6','T7'];
+    return {ngay:`${dd}/${mm}`,thu:days7[dt.getDay()],...o};
+  });
+
+  // Giờ
+  const hourArr = Array(24).fill(0);
+  data.forEach(r=>{ if(r.gio){const hh=parseInt(r.gio);if(hh>=0&&hh<24)hourArr[hh]++;} });
+  const peakH = hourArr.indexOf(Math.max(...hourArr));
+  const peakHour = {gio:`${String(peakH).padStart(2,'0')}:00`, total:hourArr[peakH]};
+
+  // Nội dung
+  const dvGroups = {};
+  data.forEach(r=>{ if(!dvGroups[r.dichvu])dvGroups[r.dichvu]=[]; if(r.noidung)dvGroups[r.dichvu].push(r.noidung); });
+  const contentLines = Object.entries(dvGroups).map(([dv,items])=>
+    `▶ ${DV_LABELS[dv]}: ${[...new Set(items)].slice(0,6).join(' / ')}`
+  );
+
+  // Khách hàng quay lại
+  const custMap = {};
+  data.forEach(r=>{ if(r.donvi) custMap[r.donvi]=(custMap[r.donvi]||0)+1; });
+  const returning = Object.entries(custMap).filter(([,c])=>c>1).length;
+  const topCust = Object.entries(custMap).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([n,c])=>`${n} (${c})`);
+
+  // Delta tuần trước
+  const lastMonDate = new Date(getMonday(new Date()));
+  lastMonDate.setDate(lastMonDate.getDate()-7);
+  const lastSun = new Date(lastMonDate); lastSun.setDate(lastSun.getDate()+6);
+  const lastWeekTotal = records.filter(r=>r.ngay>=lastMonDate.toISOString().split('T')[0]&&r.ngay<=lastSun.toISOString().split('T')[0]).length;
+  const diff = total - lastWeekTotal;
+  const delta = diff===0?'Không đổi':diff>0?`+${diff} ca ▲`:`${diff} ca ▼`;
+
+  return { labelPeriod, total, dvCnt, numDays:dayRows.length, delta, dayRows, peakHour, contentLines, topCust, returning, fromStr, toStr, source:'firebase' };
+}
+
+// ── GỌI AI & RENDER ──
+async function callAIAndRender(payload) {
+  const audience = document.getElementById('rpt-audience').value;
+  const kinggui  = document.getElementById('rpt-kinggui').value;
+  const ivText   = document.getElementById('rpt-iv').value;
+  const vText    = document.getElementById('rpt-v').value;
+  const today    = new Date();
+  const ngayXuat = `${today.getDate()}/${String(today.getMonth()+1).padStart(2,'0')}/${today.getFullYear()}`;
+  const isBGD    = audience === 'bgd';
+
+  // Tóm tắt thống kê để đưa vào prompt
+  const statsSummary = `
+KỲ BÁO CÁO: ${payload.labelPeriod}
+TỔNG CA HỖ TRỢ: ${payload.total}
+- BHXH điện tử: ${payload.dvCnt.BHXH} ca (${payload.total?Math.round(payload.dvCnt.BHXH/payload.total*100):0}%)
+- Hóa đơn điện tử: ${payload.dvCnt.HD} ca (${payload.total?Math.round(payload.dvCnt.HD/payload.total*100):0}%)
+- Chữ ký số: ${payload.dvCnt.CKS} ca (${payload.total?Math.round(payload.dvCnt.CKS/payload.total*100):0}%)
+- Hỗ trợ khác: ${payload.dvCnt.Khac} ca
+SỐ NGÀY LÀM VIỆC: ${payload.numDays} ngày
+SO VỚI KỲ TRƯỚC: ${payload.delta}
+GIỜ CAO ĐIỂM: ${payload.peakHour.gio} (${payload.peakHour.total} ca)
+KHÁCH HÀNG QUAY LẠI: ${payload.returning||'N/A'} đơn vị
+TOP KHÁCH HÀNG: ${(payload.topCust||[]).join(', ')||'N/A'}
+NỘI DUNG HỖ TRỢ CHÍNH:
+${payload.contentLines.join('\n')}
+CHI TIẾT THEO NGÀY:
+${payload.dayRows.map(d=>`${d.ngay}(${d.thu}): Tổng ${d.total} | BHXH ${d.BHXH} | HĐ ${d.HD} | CKS ${d.CKS} | Khác ${d.Khac}`).join('\n')}`;
+
+  const prompt = isBGD ? `
+Bạn là chuyên gia viết báo cáo hành chính cho cấp quản lý cao nhất (Ban Giám đốc).
+Viết báo cáo công việc cho nhân viên Phan Duy Đông – Bộ phận Hỗ trợ Kỹ thuật – Công ty VISNAM.
+Lĩnh vực: phần mềm BHXH điện tử, hóa đơn điện tử, chữ ký số.
+
+DỮ LIỆU THỰC TẾ:
+${statsSummary}
+
+YÊU CẦU VIẾT:
+1. Văn phong trang trọng, chuyên nghiệp cấp công văn
+2. Phân tích số liệu — KHÔNG liệt kê thô
+3. Nhận xét xu hướng, so sánh kỳ trước nếu có
+4. Đề xuất cụ thể, khả thi
+5. Chỉ viết phần "III. KẾT QUẢ THỰC HIỆN NHIỆM VỤ" — dùng HTML với <h4> và <ul><li>
+6. Không markdown, không giải thích ngoài lề` :
+`Bạn là nhân viên kỹ thuật viết báo cáo nội bộ ngắn gọn cho trưởng bộ phận.
+Tên: Phan Duy Đông – Hỗ trợ Kỹ thuật – VISNAM.
+
+DỮ LIỆU:
+${statsSummary}
+
+YÊU CẦU:
+1. Ngắn gọn, súc tích — mỗi ý không quá 1 câu
+2. Tập trung vào số liệu quan trọng nhất
+3. Chỉ viết phần "III. KẾT QUẢ" — HTML với <h4> và <ul><li>
+4. Không markdown, không giải thích`;
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(()=>controller.abort(), 20000);
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST', signal:controller.signal,
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514', max_tokens:1200,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    clearTimeout(timeout);
+    const d = await res.json();
+    const aiText = d.content?.[0]?.text || '';
+
+    _currentReportData = { payload, aiSection3: aiText||genFallbackSection3AI(payload), audience, kinggui, ivText, vText, ngayXuat };
+    renderReportPreview(_currentReportData);
+    toast('✓ AI đã tạo báo cáo!','success');
+  } catch(e) {
+    const fallback = genFallbackSection3AI(payload);
+    _currentReportData = { payload, aiSection3: fallback, audience, kinggui, ivText, vText, ngayXuat };
+    renderReportPreview(_currentReportData);
+    toast('⚠ Dùng nội dung tự tổng hợp (AI timeout)','success');
+  }
+}
+
+function genFallbackSection3AI(payload) {
+  const dvNames={BHXH:'BHXH điện tử',HD:'Hóa đơn điện tử',CKS:'Chữ ký số',Khac:'Hỗ trợ khác'};
+  return DV_LIST.filter(d=>payload.dvCnt[d]>0).map(d=>
+    `<h4 style="color:${DV_COLORS[d]};margin:10px 0 4px">${dvNames[d]} — ${payload.dvCnt[d]} ca</h4>
+     <ul>${payload.contentLines.filter(l=>l.startsWith('▶ '+DV_LABELS[d])).map(l=>`<li>${l.replace(/▶\s*\w+:\s*/,'')}</li>`).join('')||'<li>Đã hỗ trợ các vấn đề liên quan</li>'}</ul>`
+  ).join('');
+}
+
+// ── RENDER HTML PREVIEW ──
+function renderReportPreview(rd) {
+  const { payload, aiSection3, audience, kinggui, ivText, vText, ngayXuat } = rd;
+  const isBGD = audience === 'bgd';
+  const type   = document.getElementById('rpt-loai').value;
+
+  const ivLines = ivText.split('\n').filter(l=>l.trim()).map(l=>`<li>${l.replace(/^[-•]\s*/,'')}</li>`).join('');
+  const vLines  = vText.split('\n').filter(l=>l.trim()).map(l=>`<li>${l.replace(/^[-•]\s*/,'')}</li>`).join('');
+
+  const dayTableRows = payload.dayRows.map(d=>`
+    <tr>
+      <td style="font-weight:600">${d.ngay}</td>
+      <td style="color:var(--text-muted)">${d.thu||''}</td>
+      <td style="text-align:center;color:var(--c-bhxh);font-weight:700">${d.BHXH||'—'}</td>
+      <td style="text-align:center;color:var(--c-hd);font-weight:700">${d.HD||'—'}</td>
+      <td style="text-align:center;color:var(--c-cks);font-weight:700">${d.CKS||'—'}</td>
+      <td style="text-align:center;color:var(--text-muted)">${d.Khac||'—'}</td>
+      <td style="text-align:center;font-weight:800">${d.total}</td>
+    </tr>`).join('');
+
+  const loaiBaoCao = type==='tuan' ? 'TUẦN' : 'THÁNG';
+  const label2 = isBGD ? '(Báo cáo Ban Giám đốc)' : '(Báo cáo Nội bộ)';
+
+  document.getElementById('rpt-preview').innerHTML = `
+    <h1>CÔNG TY CỔ PHẦN THƯƠNG MẠI VISNAM</h1>
+    <h2>BỘ PHẬN HỖ TRỢ KỸ THUẬT</h2>
+    <h1>BÁO CÁO CÔNG VIỆC ${loaiBaoCao} — ${payload.labelPeriod.toUpperCase()}</h1>
+    <p class="meta center"><em>${label2}</em></p>
+    <br>
+    <p><strong>Kính gửi:</strong> ${kinggui}</p>
+    <p><strong>Người thực hiện:</strong> Phan Duy Đông</p>
+    <p><strong>Ngày báo cáo:</strong> ${ngayXuat}</p>
+    <hr style="border-color:var(--border);margin:14px 0">
+
+    <h3>I. THÔNG TIN KỲ BÁO CÁO</h3>
+    <ul>
+      <li>Kỳ báo cáo: <strong class="rpt-highlight">${payload.labelPeriod}</strong></li>
+      <li>Số ngày làm việc có dữ liệu: <strong>${payload.numDays} ngày</strong></li>
+      <li>So với kỳ trước: <strong>${payload.delta||'N/A'}</strong></li>
+    </ul>
+
+    <h3>II. THỐNG KÊ TỔNG HỢP</h3>
+    <ul>
+      <li>Tổng ca hỗ trợ: <strong class="rpt-highlight">${payload.total} ca</strong></li>
+      <li>BHXH điện tử: <strong style="color:var(--c-bhxh)">${payload.dvCnt.BHXH} ca</strong> (${payload.total?Math.round(payload.dvCnt.BHXH/payload.total*100):0}%)</li>
+      <li>Hóa đơn điện tử: <strong style="color:var(--c-hd)">${payload.dvCnt.HD} ca</strong> (${payload.total?Math.round(payload.dvCnt.HD/payload.total*100):0}%)</li>
+      <li>Chữ ký số: <strong style="color:var(--c-cks)">${payload.dvCnt.CKS} ca</strong> (${payload.total?Math.round(payload.dvCnt.CKS/payload.total*100):0}%)</li>
+      <li>Giờ cao điểm: <strong>${payload.peakHour.gio}</strong> (${payload.peakHour.total} ca)</li>
+    </ul>
+    <table>
+      <tr><th>Ngày</th><th>Thứ</th><th style="text-align:center;color:var(--c-bhxh)">BHXH</th><th style="text-align:center;color:var(--c-hd)">HĐ</th><th style="text-align:center;color:var(--c-cks)">CKS</th><th style="text-align:center">Khác</th><th style="text-align:center">Tổng</th></tr>
+      ${dayTableRows}
+      <tr style="font-weight:800;border-top:2px solid var(--border)">
+        <td>TỔNG</td><td></td>
+        <td style="text-align:center">${payload.dvCnt.BHXH}</td>
+        <td style="text-align:center">${payload.dvCnt.HD}</td>
+        <td style="text-align:center">${payload.dvCnt.CKS}</td>
+        <td style="text-align:center">${payload.dvCnt.Khac}</td>
+        <td style="text-align:center">${payload.total}</td>
+      </tr>
+    </table>
+
+    <h3>III. KẾT QUẢ THỰC HIỆN NHIỆM VỤ</h3>
+    ${aiSection3}
+
+    <h3>IV. ĐÁNH GIÁ & ĐỀ XUẤT</h3>
+    <ul>${ivLines}</ul>
+
+    <h3>V. KẾ HOẠCH TIẾP THEO</h3>
+    <ul>${vLines}</ul>
+
+    <br>
+    <p class="center"><em>Đà Nẵng, ngày ${ngayXuat}</em></p>
+    <p class="center"><strong>Người làm báo cáo</strong></p>
+    <br><br>
+    <p class="center"><strong>Phan Duy Đông</strong></p>
+  `;
+  document.getElementById('rpt-preview-label').textContent = `${payload.labelPeriod} · ${isBGD?'BGĐ':'Nội bộ'} · ${ngayXuat}`;
+}
+
+// ── XUẤT DOCX ──
+async function exportReportDocx() {
+  if (!_currentReportData) { toast('Vui lòng tạo báo cáo trước','error'); return; }
+  if (typeof docx === 'undefined') { toast('Thư viện docx chưa tải','error'); return; }
+
+  const { payload, aiSection3, audience, kinggui, ivText, vText, ngayXuat } = _currentReportData;
+  const isBGD = audience === 'bgd';
+  const type  = document.getElementById('rpt-loai').value;
+  const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
+          AlignmentType, WidthType, BorderStyle, ShadingType, LevelFormat } = docx;
+
+  const border = {style:BorderStyle.SINGLE,size:1,color:'CCCCCC'};
+  const borders = {top:border,bottom:border,left:border,right:border};
+  const mkCell = (text,bold=false,bg=null,center=false) => new TableCell({
+    borders, shading:bg?{fill:bg,type:ShadingType.CLEAR}:undefined,
+    margins:{top:60,bottom:60,left:100,right:100},
+    children:[new Paragraph({alignment:center?AlignmentType.CENTER:AlignmentType.LEFT,
+      children:[new TextRun({text:String(text),bold,size:22,font:'Arial'})]})]
+  });
+  const mkPara = (text,bold=false,size=24,center=false) => new Paragraph({
+    children:[new TextRun({text,bold,size,font:'Arial'})],
+    alignment:center?AlignmentType.CENTER:AlignmentType.LEFT,
+    spacing:{before:80,after:60}
+  });
+  const mkBullet = (text) => new Paragraph({
+    numbering:{reference:'bullets',level:0},
+    children:[new TextRun({text,size:24,font:'Arial'})]
+  });
+
+  // Parse AI HTML section 3 thành paragraphs đơn giản
+  const section3Paras = [];
+  const dvNames={BHXH:'BHXH điện tử',HD:'Hóa đơn điện tử',CKS:'Chữ ký số',Khac:'Hỗ trợ khác'};
+  const tmp = document.createElement('div');
+  tmp.innerHTML = aiSection3;
+  tmp.querySelectorAll('h4,li,p').forEach(el => {
+    const t = el.textContent.trim();
+    if (!t) return;
+    if (el.tagName==='H4') {
+      section3Paras.push(new Paragraph({children:[new TextRun({text:t,bold:true,size:24,font:'Arial',color:'2563EB'})],spacing:{before:140,after:60}}));
+    } else {
+      section3Paras.push(mkBullet(t));
+    }
+  });
+  if (!section3Paras.length) section3Paras.push(mkPara('(Không có dữ liệu chi tiết)'));
+
+  // Bảng theo ngày
+  const dayHeader = new TableRow({children:[
+    mkCell('Ngày',true,'D5E8F0'), mkCell('Thứ',true,'D5E8F0'),
+    mkCell('BHXH',true,'D5E8F0',true), mkCell('HĐ',true,'D5E8F0',true),
+    mkCell('CKS',true,'D5E8F0',true), mkCell('Khác',true,'D5E8F0',true),
+    mkCell('Tổng',true,'D5E8F0',true),
+  ]});
+  const dayBodyRows = payload.dayRows.map(d => new TableRow({children:[
+    mkCell(d.ngay), mkCell(d.thu||''),
+    mkCell(d.BHXH||0,false,null,true), mkCell(d.HD||0,false,null,true),
+    mkCell(d.CKS||0,false,null,true), mkCell(d.Khac||0,false,null,true),
+    mkCell(d.total,true,null,true),
+  ]}));
+  const dayTotalRow = new TableRow({children:[
+    mkCell('TỔNG CỘNG',true), mkCell(''),
+    mkCell(payload.dvCnt.BHXH,true,null,true), mkCell(payload.dvCnt.HD,true,null,true),
+    mkCell(payload.dvCnt.CKS,true,null,true), mkCell(payload.dvCnt.Khac,true,null,true),
+    mkCell(payload.total,true,null,true),
+  ]});
+
+  const loaiBaoCao = type==='tuan'?'TUẦN':'THÁNG';
+  const label2 = isBGD?'Báo cáo Ban Giám đốc':'Báo cáo Nội bộ';
+  const ivItems = ivText.split('\n').filter(l=>l.trim()).map(l=>mkBullet(l.replace(/^[-•]\s*/,'')));
+  const vItems  = vText.split('\n').filter(l=>l.trim()).map(l=>mkBullet(l.replace(/^[-•]\s*/,'')));
+
+  const doc2 = new Document({
+    numbering:{config:[{reference:'bullets',levels:[{level:0,format:LevelFormat.BULLET,text:'-',alignment:AlignmentType.LEFT,style:{paragraph:{indent:{left:360,hanging:180}}}}]}]},
+    sections:[{
+      properties:{page:{size:{width:11906,height:16838},margin:{top:1134,right:1134,bottom:1134,left:1701}}},
+      children:[
+        mkPara('CÔNG TY CỔ PHẦN THƯƠNG MẠI VISNAM',true,26,true),
+        mkPara('BỘ PHẬN HỖ TRỢ KỸ THUẬT',false,24,true),
+        new Paragraph({spacing:{before:160}}),
+        mkPara(`BÁO CÁO CÔNG VIỆC ${loaiBaoCao}`,true,28,true),
+        mkPara(payload.labelPeriod.toUpperCase(),true,26,true),
+        mkPara(`(${label2})`,false,22,true),
+        new Paragraph({spacing:{before:120}}),
+        new Paragraph({children:[new TextRun({text:'Kính gửi: ',bold:true,size:24,font:'Arial'}),new TextRun({text:kinggui,size:24,font:'Arial'})]}),
+        new Paragraph({children:[new TextRun({text:'Người thực hiện: ',bold:true,size:24,font:'Arial'}),new TextRun({text:'Phan Duy Đông',bold:true,size:24,font:'Arial'})]}),
+        new Paragraph({children:[new TextRun({text:'Ngày báo cáo: ',bold:true,size:24,font:'Arial'}),new TextRun({text:ngayXuat,size:24,font:'Arial'})]}),
+        new Paragraph({spacing:{before:160}}),
+        mkPara('I. THÔNG TIN KỲ BÁO CÁO',true,26),
+        mkBullet(`Kỳ báo cáo: ${payload.labelPeriod}`),
+        mkBullet(`Số ngày làm việc có dữ liệu: ${payload.numDays} ngày`),
+        mkBullet(`So với kỳ trước: ${payload.delta||'N/A'}`),
+        new Paragraph({spacing:{before:160}}),
+        mkPara('II. THỐNG KÊ TỔNG HỢP',true,26),
+        mkBullet(`Tổng ca hỗ trợ: ${payload.total} ca`),
+        mkBullet(`BHXH điện tử: ${payload.dvCnt.BHXH} ca (${payload.total?Math.round(payload.dvCnt.BHXH/payload.total*100):0}%)`),
+        mkBullet(`Hóa đơn điện tử: ${payload.dvCnt.HD} ca (${payload.total?Math.round(payload.dvCnt.HD/payload.total*100):0}%)`),
+        mkBullet(`Chữ ký số: ${payload.dvCnt.CKS} ca (${payload.total?Math.round(payload.dvCnt.CKS/payload.total*100):0}%)`),
+        mkBullet(`Giờ cao điểm: ${payload.peakHour.gio} (${payload.peakHour.total} ca)`),
+        new Paragraph({spacing:{before:120}}),
+        new Table({width:{size:9000,type:WidthType.DXA},columnWidths:[1400,800,1200,1200,1200,1200,1600],rows:[dayHeader,...dayBodyRows,dayTotalRow]}),
+        new Paragraph({spacing:{before:160}}),
+        mkPara('III. KẾT QUẢ THỰC HIỆN NHIỆM VỤ',true,26),
+        ...section3Paras,
+        new Paragraph({spacing:{before:160}}),
+        mkPara('IV. ĐÁNH GIÁ & ĐỀ XUẤT',true,26),
+        ...ivItems,
+        new Paragraph({spacing:{before:160}}),
+        mkPara('V. KẾ HOẠCH TIẾP THEO',true,26),
+        ...vItems,
+        new Paragraph({spacing:{before:400}}),
+        mkPara(`Đà Nẵng, ngày ${ngayXuat}`,false,22,true),
+        mkPara('Người làm báo cáo',true,24,true),
+        mkPara('(Ký và ghi rõ họ tên)',false,20,true),
+        new Paragraph({spacing:{before:280}}),
+        mkPara('Phan Duy Đông',true,24,true),
+      ]
+    }]
+  });
+
+  const buffer = await Packer.toBlob(doc2);
+  const url = URL.createObjectURL(buffer);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `BaoCao_${isBGD?'BGD':'NoiBo'}_Dong_${new Date().toISOString().split('T')[0]}.docx`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('✓ Đã xuất .docx!', 'success');
 }
 </script>
 </body>
