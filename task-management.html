@@ -463,11 +463,23 @@ textarea { line-height: 1.6; }
       <div class="card-title">🕐 Phân bổ theo buổi trong ngày</div>
       <div id="by-buoi"></div>
     </div>
+    <div class="card" style="margin-bottom:16px">
+  <div class="card-title">🌡 Heatmap giờ cao điểm</div>
+  <div id="hour-heatmap"></div>
+</div>
   </div>
+  <div class="card" style="margin-bottom:16px">
+  <div class="card-title">🔄 Khách hàng quay lại</div>
+  <div id="returning-customers"></div>
+</div>
   <div class="card" style="margin-bottom:16px">
     <div class="card-title">📌 Khách hàng có ghi chú</div>
     <div id="ghichu-list"></div>
   </div>
+  <div class="card" style="margin-bottom:16px">
+  <div class="card-title">📆 Xu hướng theo tuần (trong tháng hiện tại)</div>
+  <div id="weekly-trend"></div>
+</div>
   <div class="card" id="chart-by-day-card">
     <div class="card-title">📋 Chi tiết theo ngày</div>
     <div id="chart-ngay-detail"></div>
@@ -1290,21 +1302,41 @@ function renderQuickStats(){
   const mon=getMonday(new Date()).toISOString().split('T')[0];
   const month=today.slice(0,7);
 
+  // Tuần trước
+  const lastMonDate=new Date(getMonday(new Date()));
+  lastMonDate.setDate(lastMonDate.getDate()-7);
+  const lastMon=lastMonDate.toISOString().split('T')[0];
+  const lastSun=new Date(lastMonDate);lastSun.setDate(lastSun.getDate()+6);
+  const lastSunStr=lastSun.toISOString().split('T')[0];
+
   const todayRecs=records.filter(r=>r.ngay===today);
   const weekRecs=records.filter(r=>r.ngay>=mon&&r.ngay<=today);
+  const lastWeekRecs=records.filter(r=>r.ngay>=lastMon&&r.ngay<=lastSunStr);
   const monthRecs=records.filter(r=>r.ngay.startsWith(month));
+
+  function delta(cur,prev){
+    const diff=cur-prev;
+    if(diff===0)return`<span style="color:var(--text-dim);font-size:11px">= như trước</span>`;
+    const sign=diff>0?'+':'';
+    const col=diff>0?'var(--green)':'var(--red)';
+    return`<span style="color:${col};font-size:11px;font-weight:700">${sign}${diff} so tuần trước</span>`;
+  }
 
   const v2=document.getElementById('quick-stats-v2');
   if(v2){
     const rows=[
-      {label:'Hôm nay',val:todayRecs.length,c:'var(--c-hd)'},
-      {label:'Tuần này',val:weekRecs.length,c:'var(--c-bhxh)'},
-      {label:'Tháng này',val:monthRecs.length,c:'var(--c-cks)'},
-      {label:'Tổng',val:records.length,c:'var(--orange)'},
+      {label:'Hôm nay',val:todayRecs.length,c:'var(--c-hd)',sub:''},
+      {label:'Tuần này',val:weekRecs.length,c:'var(--c-bhxh)',sub:delta(weekRecs.length,lastWeekRecs.length)},
+      {label:'Tuần trước',val:lastWeekRecs.length,c:'var(--text-dim)',sub:''},
+      {label:'Tháng này',val:monthRecs.length,c:'var(--c-cks)',sub:''},
+      {label:'Tổng',val:records.length,c:'var(--orange)',sub:''},
     ];
     v2.innerHTML=rows.map(r=>`
       <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--surface2)">
-        <span style="font-size:12px;color:var(--text-muted)">${r.label}</span>
+        <div>
+          <div style="font-size:12px;color:var(--text-muted)">${r.label}</div>
+          ${r.sub?`<div style="margin-top:2px">${r.sub}</div>`:''}
+        </div>
         <span style="font-size:20px;font-weight:800;font-family:'JetBrains Mono',monospace;color:${r.c}">${r.val}</span>
       </div>`).join('');
   }
@@ -1647,6 +1679,96 @@ function renderStats(period){
         </div>`;
     }).join('');
   }
+
+// ── HEATMAP GIỜ CAO ĐIỂM ──
+  const hmEl = document.getElementById('hour-heatmap');
+  if (hmEl) {
+    const hourCnt = Array(24).fill(0);
+    data.forEach(r => {
+      if (!r.gio) return;
+      const hh = parseInt(r.gio.split(':')[0]);
+      if (hh >= 0 && hh < 24) hourCnt[hh]++;
+    });
+    const maxH = Math.max(...hourCnt, 1);
+    const workHours = [7,8,9,10,11,12,13,14,15,16,17,18,19,20,21];
+    const getColor = (cnt) => {
+      if (cnt === 0) return 'rgba(48,54,61,0.5)';
+      const pct = cnt / maxH;
+      if (pct < 0.25) return 'rgba(37,99,235,0.3)';
+      if (pct < 0.5)  return 'rgba(37,99,235,0.55)';
+      if (pct < 0.75) return 'rgba(249,115,22,0.7)';
+      return 'rgba(239,68,68,0.9)';
+    };
+    hmEl.innerHTML = `
+      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px">
+        ${workHours.map(h => {
+          const cnt = hourCnt[h];
+          const pct = Math.round(cnt / maxH * 100);
+          return `
+            <div title="${h}:00 – ${h+1}:00 · ${cnt} ca" style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:default">
+              <div style="width:36px;height:${Math.max(cnt?8:4, Math.round(pct*0.6))}px;max-height:60px;background:${getColor(cnt)};border-radius:4px;transition:all .3s;min-height:4px"></div>
+              <div style="font-size:10px;color:${cnt>0?'var(--text)':'var(--text-dim)'};font-family:'JetBrains Mono',monospace;font-weight:${cnt>0?700:400}">${String(h).padStart(2,'0')}</div>
+              <div style="font-size:10px;color:var(--text-muted);font-family:'JetBrains Mono',monospace">${cnt||''}</div>
+            </div>`;
+        }).join('')}
+      </div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:4px">
+        <div style="display:flex;align-items:center;gap:4px"><div style="width:12px;height:12px;border-radius:2px;background:rgba(37,99,235,0.3)"></div><span style="font-size:11px;color:var(--text-muted)">Ít</span></div>
+        <div style="display:flex;align-items:center;gap:4px"><div style="width:12px;height:12px;border-radius:2px;background:rgba(37,99,235,0.55)"></div><span style="font-size:11px;color:var(--text-muted)">Trung bình</span></div>
+        <div style="display:flex;align-items:center;gap:4px"><div style="width:12px;height:12px;border-radius:2px;background:rgba(249,115,22,0.7)"></div><span style="font-size:11px;color:var(--text-muted)">Cao</span></div>
+        <div style="display:flex;align-items:center;gap:4px"><div style="width:12px;height:12px;border-radius:2px;background:rgba(239,68,68,0.9)"></div><span style="font-size:11px;color:var(--text-muted)">Đỉnh điểm</span></div>
+        ${hourCnt.reduce((a,b)=>a+b,0)===0?'<span style="font-size:11px;color:var(--text-dim)">Chưa có dữ liệu giờ</span>':''}
+      </div>`;
+  }
+  
+  // ── KHÁCH HÀNG QUAY LẠI ──
+  const retEl = document.getElementById('returning-customers');
+  if (retEl) {
+    const custVisits = {};
+    data.forEach(r => {
+      const key = r.mst || r.donvi;
+      if (!key) return;
+      if (!custVisits[key]) custVisits[key] = { donvi: r.donvi, mst: r.mst || '', count: 0, ngays: new Set() };
+      custVisits[key].count++;
+      custVisits[key].ngays.add(r.ngay);
+    });
+    const returning = Object.values(custVisits).filter(c => c.count > 1).sort((a,b) => b.count - a.count);
+    const oneTime = Object.values(custVisits).filter(c => c.count === 1).length;
+    const total_kh = Object.values(custVisits).length;
+    const pctReturn = total_kh ? Math.round(returning.length / total_kh * 100) : 0;
+
+    if (!total_kh) {
+      retEl.innerHTML = '<p style="color:var(--text-dim);font-size:12px">Không có dữ liệu</p>';
+    } else {
+      retEl.innerHTML = `
+        <div style="display:flex;gap:16px;margin-bottom:14px;flex-wrap:wrap">
+          <div style="background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);border-radius:8px;padding:10px 16px;text-align:center;flex:1;min-width:100px">
+            <div style="font-size:26px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--green)">${returning.length}</div>
+            <div style="font-size:11px;color:var(--text-muted)">Khách quay lại</div>
+          </div>
+          <div style="background:rgba(139,148,158,.1);border:1px solid rgba(139,148,158,.2);border-radius:8px;padding:10px 16px;text-align:center;flex:1;min-width:100px">
+            <div style="font-size:26px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--text-muted)">${oneTime}</div>
+            <div style="font-size:11px;color:var(--text-muted)">Khách 1 lần</div>
+          </div>
+          <div style="background:rgba(37,99,235,.1);border:1px solid rgba(37,99,235,.2);border-radius:8px;padding:10px 16px;text-align:center;flex:1;min-width:100px">
+            <div style="font-size:26px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--accent-light)">${pctReturn}%</div>
+            <div style="font-size:11px;color:var(--text-muted)">Tỷ lệ quay lại</div>
+          </div>
+        </div>
+        ${returning.slice(0,8).map((c,i) => `
+          <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--surface2)">
+            <span style="font-size:11px;color:var(--text-dim);min-width:16px">${i+1}</span>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.donvi}</div>
+              ${c.mst?`<div style="font-size:10px;color:var(--text-dim);font-family:'JetBrains Mono',monospace">${c.mst}</div>`:''}
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              <div style="font-size:16px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--orange)">${c.count}x</div>
+              <div style="font-size:10px;color:var(--text-dim)">${c.ngays.size} ngày khác nhau</div>
+            </div>
+          </div>`).join('')}`;
+    }
+  }
 // Render danh sách khách có ghi chú
   const gcMap = loadGhichuMap();
   const gcEl = document.getElementById('ghichu-list');
@@ -1673,6 +1795,56 @@ function renderStats(period){
               </div>
               <button onclick="deleteGhichu('${g.key.replace(/'/g,"&#39;")}')"
                 style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:var(--red);border-radius:4px;padding:3px 8px;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap">Xóa</button>
+            </div>`).join('')}
+        </div>`;
+    }
+  }
+  // ── XU HƯỚNG THEO TUẦN ──
+  const wtEl = document.getElementById('weekly-trend');
+  if (wtEl) {
+    // Lấy dữ liệu tháng hiện tại
+    const currentMonth = new Date().toISOString().slice(0,7);
+    const monthData = records.filter(r => r.ngay && r.ngay.startsWith(currentMonth));
+    const weekBuckets = {};
+    monthData.forEach(r => {
+      const d = new Date(r.ngay);
+      const wk = `Tuần ${getWeekOfMonth(d)}`;
+      if (!weekBuckets[wk]) weekBuckets[wk] = { total: 0, days: new Set() };
+      weekBuckets[wk].total++;
+      weekBuckets[wk].days.add(r.ngay);
+      DV_LIST.forEach(dv => {
+        if (r.dichvu === dv) weekBuckets[wk][dv] = (weekBuckets[wk][dv] || 0) + 1;
+      });
+    });
+    const weeks = Object.keys(weekBuckets).sort();
+    if (!weeks.length) {
+      wtEl.innerHTML = '<p style="color:var(--text-dim);font-size:12px">Không có dữ liệu tháng này</p>';
+    } else {
+      const maxW = Math.max(...weeks.map(w => weekBuckets[w].total), 1);
+      wtEl.innerHTML = `
+        <div style="display:flex;gap:12px;align-items:flex-end;height:130px;padding:0 8px 0 0;margin-bottom:8px">
+          ${weeks.map(w => {
+            const obj = weekBuckets[w];
+            const pct = Math.round(obj.total / maxW * 100);
+            const dvBars = DV_LIST.filter(dv => obj[dv]).map(dv =>
+              `<div style="width:100%;background:${DV_COLORS[dv]};height:${Math.round(obj[dv]/obj.total*100)}%;opacity:.85" title="${DV_LABELS[dv]}: ${obj[dv]}"></div>`
+            ).join('');
+            return `
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+                <div style="font-size:12px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--text)">${obj.total}</div>
+                <div style="width:100%;height:${Math.max(pct * 0.9, 4)}px;max-height:90px;border-radius:6px 6px 0 0;overflow:hidden;display:flex;flex-direction:column-reverse;background:var(--surface3)">
+                  ${dvBars}
+                </div>
+                <div style="font-size:11px;color:var(--text-muted);font-weight:700">${w}</div>
+                <div style="font-size:10px;color:var(--text-dim)">${obj.days.size} ngày</div>
+              </div>`;
+          }).join('')}
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px">
+          ${DV_LIST.map(dv => `
+            <div style="display:flex;align-items:center;gap:4px">
+              <div style="width:10px;height:10px;border-radius:2px;background:${DV_COLORS[dv]}"></div>
+              <span style="font-size:11px;color:var(--text-muted)">${DV_LABELS[dv]}</span>
             </div>`).join('')}
         </div>`;
     }
