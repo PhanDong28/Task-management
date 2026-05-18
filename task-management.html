@@ -28,7 +28,7 @@
   const db = getFirestore(app);
   const colRef = collection(db, "records");
 
-  window._fb = {
+window._fb = {
     async addRecord(data) {
       const docRef = await addDoc(colRef, { ...data, createdAt: serverTimestamp() });
       return docRef.id;
@@ -44,6 +44,32 @@
       return onSnapshot(q, snapshot => {
         const recs = snapshot.docs.map(d => ({ ...d.data(), _fbId: d.id }));
         callback(recs);
+      });
+    },
+    async saveGhichuFB(key, text) {
+      const docId = key.trim().toLowerCase()
+        .replace(/[^a-z0-9]/gi, '_')
+        .slice(0, 100);
+      if (text && text.trim()) {
+        await setDoc(doc(db, "ghichu", docId), {
+          key: key.trim(),
+          text: text.trim(),
+          updatedAt: serverTimestamp()
+        });
+      } else {
+        try { await deleteDoc(doc(db, "ghichu", docId)); } catch(e) {}
+      }
+    },
+    listenGhichu(callback) {
+      return onSnapshot(collection(db, "ghichu"), snapshot => {
+        const map = {};
+        snapshot.docs.forEach(d => {
+          const data = d.data();
+          if (data.key) {
+            map[data.key.trim().toLowerCase()] = { key: data.key, text: data.text || '' };
+          }
+        });
+        callback(map);
       });
     }
   };
@@ -453,12 +479,13 @@ textarea { line-height: 1.6; }
 <!-- PAGE 3: THỐNG KÊ -->
 <div class="page" id="page-thongke">
   <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
-  <div class="period-tabs" style="margin-bottom:0">
+<div class="period-tabs" style="margin-bottom:0">
     <button class="period-tab active" onclick="setStatPeriod('day',this)">Hôm nay</button>
     <button class="period-tab" onclick="setStatPeriod('week',this)">Tuần này</button>
+    <button class="period-tab" onclick="setStatPeriod('lastweek',this)">Tuần trước</button>
     <button class="period-tab" onclick="setStatPeriod('month',this)">Tháng này</button>
     <button class="period-tab" onclick="setStatPeriod('all',this)">Tất cả</button>
-  </div>
+</div>
   <div style="display:flex;gap:8px;margin-left:auto">
     <button class="btn btn-success btn-sm" onclick="exportStatExcel('week')" style="background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.4);color:var(--green);font-weight:700">
       📊 Excel tuần này
@@ -1567,9 +1594,19 @@ function getStatData(period){
   const today=new Date().toISOString().split('T')[0];
   const mon=getMonday(new Date()).toISOString().split('T')[0];
   const month=today.slice(0,7);
+
+  // ✅ THÊM: tính tuần trước
+  const lastMonDate = new Date(getMonday(new Date()));
+  lastMonDate.setDate(lastMonDate.getDate() - 7);
+  const lastMon = lastMonDate.toISOString().split('T')[0];
+  const lastSunDate = new Date(lastMonDate);
+  lastSunDate.setDate(lastSunDate.getDate() + 6);
+  const lastSun = lastSunDate.toISOString().split('T')[0];
+
   return records.filter(r=>{
     if(period==='day')return r.ngay===today;
     if(period==='week')return r.ngay>=mon&&r.ngay<=today;
+    if(period==='lastweek')return r.ngay>=lastMon&&r.ngay<=lastSun; // ✅ THÊM
     if(period==='month')return r.ngay.startsWith(month);
     return true;
   });
@@ -2306,30 +2343,6 @@ async function exportDocx(){
 // ═══════════════════════════════════════════════
 // GHI CHÚ KHÁCH HÀNG
 // ═══════════════════════════════════════════════
-const GHICHU_KEY = 'dong_kt_ghichu_v1';
-
-function saveGhichu(key, text) {
-  if (!key || key.trim().length < 2) return;
-  const map = loadGhichuMap();
-  if (text && text.trim()) {
-    map[key.trim().toLowerCase()] = { key: key.trim(), text: text.trim(), updatedAt: Date.now() };
-  } else {
-    delete map[key.trim().toLowerCase()];
-  }
-  saveGhichuMap(map);
-}
-
-// Lưu ghi chú theo key (mst hoặc tên đơn vị)
-function saveGhichu(key, text) {
-  if (!key || key.trim().length < 2) return;
-  const map = loadGhichuMap();
-  if (text && text.trim()) {
-    map[key.trim().toLowerCase()] = { key: key.trim(), text: text.trim(), updatedAt: Date.now() };
-  } else {
-    delete map[key.trim().toLowerCase()];
-  }
-  saveGhichuMap(map);
-}
 
 // ✅ THAY THẾ - dùng Firebase thay localStorage
 function loadGhichuMap() {
@@ -2338,14 +2351,12 @@ function loadGhichuMap() {
 
 function saveGhichu(key, text) {
   if (!key || key.trim().length < 2) return;
-  // Cập nhật local ngay để UI phản hồi tức thì
   const k = key.trim().toLowerCase();
   if (text && text.trim()) {
     ghichuMap[k] = { key: key.trim(), text: text.trim() };
   } else {
     delete ghichuMap[k];
   }
-  // Đẩy lên Firebase bất đồng bộ
   window._fb?.saveGhichuFB(key, text).catch(e => console.warn('Lỗi lưu ghi chú:', e));
 }
 
