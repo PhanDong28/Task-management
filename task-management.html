@@ -46,33 +46,6 @@ window._fb = {
         callback(recs);
       });
     },
-    async saveGhichuFB(key, text) {
-      const docId = key.trim().toLowerCase()
-        .replace(/[^a-z0-9]/gi, '_')
-        .slice(0, 100);
-      if (text && text.trim()) {
-        await setDoc(doc(db, "ghichu", docId), {
-          key: key.trim(),
-          text: text.trim(),
-          updatedAt: serverTimestamp()
-        });
-      } else {
-        try { await deleteDoc(doc(db, "ghichu", docId)); } catch(e) {}
-      }
-    },
-    listenGhichu(callback) {
-      return onSnapshot(collection(db, "ghichu"), snapshot => {
-        const map = {};
-        snapshot.docs.forEach(d => {
-          const data = d.data();
-          if (data.key) {
-            map[data.key.trim().toLowerCase()] = { key: data.key, text: data.text || '' };
-          }
-        });
-        callback(map);
-      });
-    }
-  };
    async saveGhichuFB(key, text) {
       const docId = key.trim().toLowerCase()
         .replace(/[^a-z0-9àáâãèéêìíòóôõùúýăđơư]/gi, '_')
