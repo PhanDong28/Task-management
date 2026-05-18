@@ -106,8 +106,8 @@ listenGiahan(callback) {
 
 /* ROOT — palette dịu mắt */
 :root{
-  --bg:#000000;--surface:#0c1828;--surface2:#101f32;--surface3:#162840;
-  --border:#1d3350;--border2:#243d60;
+  --surface:#0a0a0a;--surface2:#111111;--surface3:#1a1a1a;
+  --border:#222222;--border2:#333333;
   --accent:#3b82f6;--accent-light:#60a5fa;--accent-dim:#1e40af;
   --accent-glow:rgba(59,130,246,0.12);
   --green:#34d399;--orange:#fb923c;--red:#f87171;
@@ -130,7 +130,7 @@ body{
 
 /* HEADER */
 header{
-  background:rgba(7,14,27,0.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  background:rgba(0,0,0,0.98);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
   border-bottom:1px solid rgba(59,130,246,0.15);
   box-shadow:0 1px 0 rgba(59,130,246,0.06),0 4px 20px rgba(0,0,0,0.3);
   padding:0 24px;display:flex;align-items:center;gap:16px;
@@ -163,7 +163,7 @@ header{
 
 /* CARD */
 .card{
-  background:rgba(12,24,40,0.85);border:1px solid var(--border);
+   background:rgba(0,0,0,0.95);border:1px solid var(--border);
   border-radius:var(--radius);padding:18px 20px;
   backdrop-filter:blur(8px);
   transition:border-color .3s,box-shadow .3s;
@@ -185,7 +185,7 @@ header{
 .form-group{display:flex;flex-direction:column;gap:5px}
 .form-group label{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px}
 .form-group input,.form-group select,.form-group textarea{
-  background:rgba(16,31,50,0.9);border:1px solid var(--border);border-radius:6px;
+  background:rgba(15,15,15,0.95);border:1px solid var(--border);border-radius:6px;
   padding:9px 12px;color:var(--text);font-family:inherit;font-size:13px;
   transition:border-color .2s,box-shadow .2s;outline:none;
 }
@@ -439,6 +439,168 @@ tr { transition: background .12s ease !important; }
 td:hover .badge {
   transform: scale(1.08);
 }  
+  /* ── PARTICLES NỀN ── */
+body::before {
+  content:'';
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    radial-gradient(1px 1px at 20% 30%, rgba(59,130,246,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 80% 10%, rgba(167,139,250,0.35) 0%, transparent 100%),
+    radial-gradient(1px 1px at 50% 70%, rgba(59,130,246,0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 10% 80%, rgba(167,139,250,0.25) 0%, transparent 100%),
+    radial-gradient(1px 1px at 90% 60%, rgba(34,211,153,0.2) 0%, transparent 100%),
+    radial-gradient(1px 1px at 35% 55%, rgba(59,130,246,0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 65% 85%, rgba(167,139,250,0.2) 0%, transparent 100%);
+  animation: floatParticles 12s ease-in-out infinite alternate;
+}
+@keyframes floatParticles {
+  0%   { transform: translateY(0px) translateX(0px); opacity:.6; }
+  33%  { transform: translateY(-18px) translateX(8px); opacity:1; }
+  66%  { transform: translateY(-8px) translateX(-12px); opacity:.7; }
+  100% { transform: translateY(-24px) translateX(4px); opacity:.9; }
+}
+
+/* ── LUỒNG SÁNG QUÉT QUA NỀN ── */
+body::after {
+  content:'';
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(59,130,246,0.03) 50%,
+    transparent 60%
+  );
+  animation: sweepLight 8s ease-in-out infinite;
+}
+@keyframes sweepLight {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+/* ── MỌI THỨ NỔI LÊN TRÊN NỀN ── */
+header, .container { position:relative; z-index:1; }
+
+/* ── CARD HOVER: GLOW + NỔI ── */
+.card {
+  transition: transform .28s cubic-bezier(.21,1.02,.73,1),
+              box-shadow .28s ease,
+              border-color .28s ease !important;
+}
+.card:hover {
+  transform: translateY(-6px) !important;
+  border-color: rgba(59,130,246,0.5) !important;
+  box-shadow:
+    0 0 0 1px rgba(59,130,246,0.15),
+    0 8px 32px rgba(59,130,246,0.2),
+    0 0 60px rgba(59,130,246,0.06) !important;
+}
+
+/* ── STAT CARD: GLOW MÀU RIÊNG ── */
+.stat-card {
+  transition: transform .25s cubic-bezier(.21,1.02,.73,1),
+              box-shadow .25s ease !important;
+  background: rgba(0,0,0,0.95) !important;
+}
+.stat-card:hover {
+  transform: translateY(-8px) scale(1.03) !important;
+  box-shadow: 0 0 30px var(--c, rgba(59,130,246,0.4)),
+              0 12px 40px rgba(0,0,0,0.5) !important;
+}
+
+/* ── PILL DỊCH VỤ NẢY ── */
+.dv-pill {
+  transition: all .2s cubic-bezier(.34,1.56,.64,1) !important;
+}
+.dv-pill:hover {
+  transform: translateY(-3px) scale(1.06) !important;
+}
+.dv-pill:active {
+  transform: scale(0.92) !important;
+}
+
+/* ── BUTTON SHIMMER ── */
+.btn {
+  transition: all .2s ease !important;
+  position: relative; overflow: hidden;
+}
+.btn::after {
+  content:'';
+  position:absolute;inset:0;
+  background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,0.12) 50%,transparent 70%);
+  transform:translateX(-100%);
+  transition:transform .4s ease;
+}
+.btn:hover::after { transform:translateX(100%); }
+.btn:hover { transform: translateY(-2px) !important; }
+.btn:active { transform: scale(0.96) !important; }
+
+/* ── NAV TAB ── */
+.nav-tab {
+  transition: all .2s cubic-bezier(.34,1.56,.64,1) !important;
+}
+.nav-tab:hover { transform: translateY(-2px) !important; }
+
+/* ── BADGE POP ── */
+.badge {
+  transition: transform .15s cubic-bezier(.34,1.56,.64,1) !important;
+  display: inline-block;
+}
+td:hover .badge { transform: scale(1.12) !important; }
+
+/* ── TABLE ROW SLIDE ── */
+tbody tr {
+  transition: background .15s ease, transform .15s ease !important;
+}
+tbody tr:hover {
+  background: rgba(59,130,246,0.07) !important;
+  transform: translateX(3px);
+}
+
+/* ── ĐỒNG HỒ NHỊP ── */
+#clock-time {
+  animation: blink 1s step-end infinite;
+}
+@keyframes blink {
+  0%,100% { opacity:1; }
+  50% { opacity:.5; }
+}
+
+/* ── INPUT FOCUS GLOW ── */
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.15),
+              0 0 20px rgba(59,130,246,0.1) !important;
+  transition: all .2s ease !important;
+}
+
+/* ── LOGO SHIMMER ── */
+.logo {
+  animation: shimmer 3s linear infinite !important;
+}
+
+/* ── STAT VALUE ĐẾM ── */
+.stat-value {
+  transition: color .3s ease;
+}
+.stat-card:hover .stat-value {
+  text-shadow: 0 0 20px var(--c, rgba(59,130,246,0.8));
+}
+
+/* ── FILTER BAR ── */
+.filter-bar {
+  background: rgba(0,0,0,0.9) !important;
+  border-color: #222 !important;
+}
+
+/* ── TABLE WRAP ── */
+.table-wrap {
+  border-color: #222 !important;
+}
+th {
+  background: rgba(0,0,0,0.98) !important;
+}
 </style>
 </head>
 <body>
