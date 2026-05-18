@@ -11,7 +11,7 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import {
     getFirestore, collection, addDoc, getDocs, deleteDoc,
-    doc, onSnapshot, query, orderBy, serverTimestamp, updateDoc
+    doc, onSnapshot, query, orderBy, serverTimestamp, updateDoc, setDoc
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -44,6 +44,34 @@
       return onSnapshot(q, snapshot => {
         const recs = snapshot.docs.map(d => ({ ...d.data(), _fbId: d.id }));
         callback(recs);
+      });
+    }
+  };
+   async saveGhichuFB(key, text) {
+      const docId = key.trim().toLowerCase()
+        .replace(/[^a-z0-9àáâãèéêìíòóôõùúýăđơư]/gi, '_')
+        .slice(0, 100);
+      if (text && text.trim()) {
+        await setDoc(doc(db, "ghichu", docId), {
+          key: key.trim(),
+          text: text.trim(),
+          updatedAt: serverTimestamp()
+        });
+      } else {
+        await deleteDoc(doc(db, "ghichu", docId));
+      }
+    },
+
+    listenGhichu(callback) {
+      return onSnapshot(collection(db, "ghichu"), snapshot => {
+        const map = {};
+        snapshot.docs.forEach(d => {
+          const data = d.data();
+          if (data.key) {
+            map[data.key.trim().toLowerCase()] = { key: data.key, text: data.text || '' };
+          }
+        });
+        callback(map);
       });
     }
   };
@@ -438,6 +466,10 @@ textarea { line-height: 1.6; }
     <button class="btn btn-success btn-sm" onclick="exportStatExcel('month')" style="background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.4);color:var(--accent-light);font-weight:700">
       📊 Excel tháng này
     </button>
+    <button class="btn btn-success btn-sm" onclick="exportStatExcel('lastweek')"
+  style="background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.4);color:var(--orange);font-weight:700">
+  📊 Excel tuần trước
+</button>
   </div>
 </div>
 
@@ -693,6 +725,7 @@ const DV_BADGE  = {BHXH:'badge-bhxh',HD:'badge-hd',CKS:'badge-cks',Khac:'badge-k
 
 let records = [];
 let _fbUnsubscribe = null;
+let ghichuMap = {}; 
 
 // ═══════════════════════════════════════════════
 // FIREBASE
@@ -701,12 +734,36 @@ function initFirebase() {
   if (!window._fb) { console.warn('Firebase chưa sẵn sàng'); return; }
   if (_fbUnsubscribe) _fbUnsubscribe();
   showFbStatus('🔄 Đang kết nối Firebase...', 'loading');
+
   _fbUnsubscribe = window._fb.listenRecords(recs => {
     records = recs;
     showFbStatus('✓ Firebase đã kết nối · Realtime sync', 'ok');
     renderQuickStats();
     renderTable();
   });
+
+  window._fb.listenGhichu(map => {
+    ghichuMap = map;
+    // Nếu đang xem trang thống kê thì cập nhật lại
+    if (document.getElementById('page-thongke').classList.contains('active')) {
+      renderStats(statPeriod);
+    }
+  });
+
+  const OLD_KEY = 'dong_kt_ghichu_v1';
+  const oldData = localStorage.getItem(OLD_KEY);
+  if (oldData) {
+    try {
+      const oldMap = JSON.parse(oldData);
+      Object.values(oldMap).forEach(g => {
+        if (g.key && g.text) {
+          window._fb.saveGhichuFB(g.key, g.text).catch(() => {});
+        }
+      });
+      localStorage.removeItem(OLD_KEY);
+      console.log('✅ Đã migrate ghi chú cũ lên Firebase');
+    } catch(e) {}
+  }
 }
 
 function showFbStatus(msg, type) {
@@ -1938,9 +1995,7 @@ function filterGhichuList() {
 }
 function deleteGhichu(key) {
   if (!confirm(`Xóa ghi chú của "${key}"?`)) return;
-  const map = loadGhichuMap();
-  delete map[key.trim().toLowerCase()];
-  saveGhichuMap(map);
+  saveGhichu(key, ''); // truyền rỗng = xóa cả local lẫn Firebase
   renderStats(statPeriod);
   toast('Đã xóa ghi chú', 'success');
 }
@@ -2253,11 +2308,15 @@ async function exportDocx(){
 // ═══════════════════════════════════════════════
 const GHICHU_KEY = 'dong_kt_ghichu_v1';
 
-function loadGhichuMap() {
-  try { return JSON.parse(localStorage.getItem(GHICHU_KEY)) || {}; } catch { return {}; }
-}
-function saveGhichuMap(map) {
-  localStorage.setItem(GHICHU_KEY, JSON.stringify(map));
+function saveGhichu(key, text) {
+  if (!key || key.trim().length < 2) return;
+  const map = loadGhichuMap();
+  if (text && text.trim()) {
+    map[key.trim().toLowerCase()] = { key: key.trim(), text: text.trim(), updatedAt: Date.now() };
+  } else {
+    delete map[key.trim().toLowerCase()];
+  }
+  saveGhichuMap(map);
 }
 
 // Lưu ghi chú theo key (mst hoặc tên đơn vị)
@@ -2272,11 +2331,27 @@ function saveGhichu(key, text) {
   saveGhichuMap(map);
 }
 
-// Lấy ghi chú theo mst hoặc tên đơn vị
+// ✅ THAY THẾ - dùng Firebase thay localStorage
+function loadGhichuMap() {
+  return ghichuMap;
+}
+
+function saveGhichu(key, text) {
+  if (!key || key.trim().length < 2) return;
+  // Cập nhật local ngay để UI phản hồi tức thì
+  const k = key.trim().toLowerCase();
+  if (text && text.trim()) {
+    ghichuMap[k] = { key: key.trim(), text: text.trim() };
+  } else {
+    delete ghichuMap[k];
+  }
+  // Đẩy lên Firebase bất đồng bộ
+  window._fb?.saveGhichuFB(key, text).catch(e => console.warn('Lỗi lưu ghi chú:', e));
+}
+
 function getGhichu(mst, donvi) {
-  const map = loadGhichuMap();
-  if (mst && map[mst.trim().toLowerCase()]) return map[mst.trim().toLowerCase()].text;
-  if (donvi && map[donvi.trim().toLowerCase()]) return map[donvi.trim().toLowerCase()].text;
+  if (mst && ghichuMap[mst.trim().toLowerCase()]) return ghichuMap[mst.trim().toLowerCase()].text;
+  if (donvi && ghichuMap[donvi.trim().toLowerCase()]) return ghichuMap[donvi.trim().toLowerCase()].text;
   return '';
 }
 
@@ -2353,13 +2428,25 @@ function exportStatExcel(period) {
   const todayStr = today.toISOString().split('T')[0];
   let fromStr, toStr, labelPeriod;
 
-  if (period === 'week') {
+ if (period === 'week') {
     const mon = getMonday(today);
     const sun = new Date(mon); sun.setDate(sun.getDate() + 6);
     fromStr = mon.toISOString().split('T')[0];
     toStr   = sun.toISOString().split('T')[0];
     const wNum = Math.ceil(today.getDate() / 7);
     labelPeriod = `Tuần ${wNum} tháng ${String(today.getMonth()+1).padStart(2,'0')}/${today.getFullYear()}`;
+
+  // ✅ THÊM NHÁNH NÀY
+  } else if (period === 'lastweek') {
+    const lastMon = new Date(getMonday(today));
+    lastMon.setDate(lastMon.getDate() - 7);
+    const lastSun = new Date(lastMon);
+    lastSun.setDate(lastSun.getDate() + 6);
+    fromStr = lastMon.toISOString().split('T')[0];
+    toStr   = lastSun.toISOString().split('T')[0];
+    const wNum2 = Math.ceil(lastMon.getDate() / 7);
+    labelPeriod = `Tuần ${wNum2} tháng ${String(lastMon.getMonth()+1).padStart(2,'0')}/${lastMon.getFullYear()} (tuần trước)`;
+
   } else {
     fromStr = todayStr.slice(0,7) + '-01';
     toStr   = todayStr.slice(0,7) + '-31';
