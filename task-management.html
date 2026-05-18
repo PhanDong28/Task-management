@@ -122,9 +122,6 @@ listenGiahan(callback) {
 body{
   font-family:'Be Vietnam Pro',sans-serif;
   background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;
-  background-image:
-    radial-gradient(ellipse 60% 40% at 10% 0%,rgba(59,130,246,0.04) 0%,transparent 60%),
-    radial-gradient(ellipse 50% 50% at 90% 100%,rgba(167,139,250,0.03) 0%,transparent 60%);
 }
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:var(--surface2)}
@@ -350,6 +347,98 @@ tr:hover td{background:rgba(59,130,246,0.04)}
 /* MISC */
 #page-nhap .card{height:fit-content}
 #page-baocao > div:first-child{border-bottom:2px solid var(--accent)}
+
+/* === ĐỘNG HƠN === */
+
+/* Nút pill dịch vụ nảy khi click */
+.dv-pill {
+  transition: all .18s cubic-bezier(.34,1.56,.64,1) !important;
+}
+.dv-pill:active {
+  transform: scale(0.93) !important;
+}
+
+/* Stat card float nhẹ */
+.stat-card {
+  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease !important;
+}
+.stat-card:hover {
+  transform: translateY(-5px) scale(1.02) !important;
+  box-shadow: 0 12px 36px rgba(59,130,246,0.18) !important;
+}
+
+/* Số trong stat card đếm lên (pulse) */
+.stat-value {
+  animation: pulseVal 2.5s ease-in-out infinite;
+}
+@keyframes pulseVal {
+  0%,100% { opacity:1; }
+  50% { opacity:.75; }
+}
+
+/* Button chính glow khi hover */
+.btn-primary {
+  transition: all .2s ease !important;
+  position: relative;
+  overflow: hidden;
+}
+.btn-primary::after {
+  content:'';
+  position:absolute;inset:0;
+  background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,0.12) 50%,transparent 70%);
+  transform:translateX(-100%);
+  transition:transform .45s ease;
+}
+.btn-primary:hover::after {
+  transform:translateX(100%);
+}
+
+/* Card slide in mỗi khi render */
+.card {
+  animation: cardIn .32s cubic-bezier(.21,1.02,.73,1) both !important;
+}
+
+/* Row bảng highlight mượt */
+tr { transition: background .12s ease !important; }
+
+/* Nav tab glow */
+.nav-tab {
+  transition: all .18s ease !important;
+  position: relative;
+}
+.nav-tab.active::after {
+  content:'';
+  position:absolute;bottom:-1px;left:50%;transform:translateX(-50%);
+  width:60%;height:2px;
+  background:rgba(255,255,255,0.4);
+  border-radius:2px;
+}
+
+/* Input focus ripple */
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  transition: border-color .15s, box-shadow .25s ease !important;
+}
+
+/* Clock nhịp tim */
+#clock-time {
+  animation: heartbeat 1s ease infinite;
+}
+@keyframes heartbeat {
+  0%,100% { opacity:1; }
+  49% { opacity:1; }
+  50% { opacity:.4; }
+  99% { opacity:.4; }
+}
+
+/* Badge pop */
+.badge {
+  transition: transform .15s ease !important;
+}
+td:hover .badge {
+  transform: scale(1.08);
+}  
 </style>
 </head>
 <body>
