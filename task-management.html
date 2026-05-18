@@ -61,6 +61,23 @@ window._fb = {
       }
     },
 
+  async addGiahan(data) {
+  const docRef = await addDoc(collection(db, "giahan"), { ...data, createdAt: serverTimestamp() });
+  return docRef.id;
+},
+async deleteGiahan(fbId) {
+  await deleteDoc(doc(db, "giahan", fbId));
+},
+async updateGiahan(fbId, data) {
+  await updateDoc(doc(db, "giahan", fbId), data);
+},
+listenGiahan(callback) {
+  const q = query(collection(db, "giahan"), orderBy("createdAt", "desc"));
+  return onSnapshot(q, snapshot => {
+    const recs = snapshot.docs.map(d => ({ ...d.data(), _fbId: d.id }));
+    callback(recs);
+  });
+},
     listenGhichu(callback) {
       return onSnapshot(collection(db, "ghichu"), snapshot => {
         const map = {};
@@ -274,6 +291,7 @@ textarea { line-height: 1.6; }
   <div id="fb-status" style="font-size:11px;color:var(--yellow);margin-left:16px;font-weight:600">⏳ Đang kết nối...</div>
   <nav class="nav-tabs">
     <button class="nav-tab active" onclick="showPage('nhap',this)">➕ Nhập liệu</button>
+    <button class="nav-tab" onclick="showPage('giahan',this)">🔄 Gia hạn</button>
     <button class="nav-tab" onclick="showPage('bang',this)">📋 Bảng ghi</button>
     <button class="nav-tab" onclick="showPage('thongke',this)">📊 Thống kê</button>
     <button class="nav-tab" onclick="showPage('baocao',this)">📝 Báo cáo</button>
@@ -643,6 +661,164 @@ textarea { line-height: 1.6; }
   </div>
 </div>
 
+<!-- PAGE: GIA HẠN -->
+<div class="page" id="page-giahan">
+
+  <div style="display:grid;grid-template-columns:1fr 280px;gap:20px;margin-bottom:20px;align-items:start">
+    <div class="card">
+      <div class="card-title">
+        🔄 NHẬP YÊU CẦU GIA HẠN
+        <span style="margin-left:8px;font-size:10px;color:var(--accent-light);font-weight:400;text-transform:none">Kỹ thuật: Đông</span>
+      </div>
+
+      <div style="display:grid;grid-template-columns:160px 1fr 1fr;gap:10px;margin-bottom:10px">
+        <div class="form-group">
+          <label>Ngày</label>
+          <input type="date" id="gh-ngay" style="width:100%">
+        </div>
+        <div class="form-group" style="position:relative">
+          <label>MST / CCCD <span style="color:var(--red)">*</span></label>
+          <input type="text" id="gh-mst" placeholder="Nhập MST hoặc CCCD" autocomplete="off"
+            oninput="onGhMstInput(this)">
+          <div id="gh-mst-suggest" style="display:none;position:absolute;left:0;top:100%;z-index:300;background:var(--surface2);border:1px solid var(--accent);border-radius:6px;max-height:180px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.5);min-width:300px"></div>
+        </div>
+        <div class="form-group">
+          <label>SĐT</label>
+          <input type="text" id="gh-sdt" placeholder="0901234567">
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div class="form-group">
+          <label>Người liên hệ</label>
+          <input type="text" id="gh-nguoilh" placeholder="Tên người liên hệ">
+        </div>
+        <div class="form-group">
+          <label>Dịch vụ <span style="color:var(--red)">*</span></label>
+          <select id="gh-dichvu" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:0 12px;color:var(--text);font-family:inherit;font-size:13px;outline:none;height:36px">
+            <option value="">-- Chọn dịch vụ --</option>
+            <option value="HĐ">HĐ – Hóa đơn điện tử</option>
+            <option value="BHXH">BHXH – Bảo hiểm xã hội</option>
+            <option value="CKS">CKS – Chữ ký số</option>
+            <option value="CKS HSM">CKS HSM</option>
+            <option value="Khác">Khác</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:12px">
+        <label>Ghi chú</label>
+        <input type="text" id="gh-ghichu" placeholder="Ghi chú thêm (nếu có)">
+      </div>
+
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary" id="gh-btn-save" onclick="addGiahan()" style="flex:1;justify-content:center">
+          💾 Lưu gia hạn
+        </button>
+        <button class="btn btn-ghost" onclick="clearGiahanForm()">✕ Xóa</button>
+      </div>
+      <div id="gh-last-saved" style="display:none;margin-top:8px;padding:8px 12px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:6px;font-size:12px;color:var(--green)"></div>
+    </div>
+
+    <!-- Stats -->
+    <div class="card">
+      <div class="card-title" style="font-size:10px">📊 THỐNG KÊ GIA HẠN</div>
+      <div id="gh-quick-stats"></div>
+    </div>
+  </div>
+
+  <!-- Filter + Table -->
+  <div class="filter-bar">
+    <input type="date" id="gh-f-from" onchange="renderGiahanTable()">
+    <span style="color:var(--text-muted)">→</span>
+    <input type="date" id="gh-f-to" onchange="renderGiahanTable()">
+    <select id="gh-f-dv" onchange="renderGiahanTable()" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:0 10px;color:var(--text);font-family:inherit;font-size:13px;outline:none;height:34px;min-width:160px">
+      <option value="">Tất cả dịch vụ</option>
+      <option value="HĐ">HĐ – Hóa đơn</option>
+      <option value="BHXH">BHXH</option>
+      <option value="CKS">CKS</option>
+      <option value="CKS HSM">CKS HSM</option>
+      <option value="Khác">Khác</option>
+    </select>
+    <input type="text" id="gh-f-search" placeholder="🔍 Tìm MST, SĐT..." oninput="renderGiahanTable()" style="min-width:180px">
+    <button class="btn btn-ghost btn-sm" onclick="ghClearFilters()">Xóa lọc</button>
+    <button class="btn btn-success btn-sm" onclick="exportGiahanExcel()">📊 Xuất Excel</button>
+    <button class="btn btn-ghost btn-sm" onclick="copyGiahanTable()">📋 Copy</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:44px">STT</th>
+          <th>Ngày</th>
+          <th>MST / CCCD</th>
+          <th>SĐT</th>
+          <th>Người LH</th>
+          <th>Dịch vụ</th>
+          <th>Kỹ thuật</th>
+          <th>Ghi chú</th>
+          <th style="width:56px">Sửa</th>
+          <th style="width:56px">Xóa</th>
+        </tr>
+      </thead>
+      <tbody id="gh-table-body"></tbody>
+    </table>
+  </div>
+  <div id="gh-table-empty" class="empty-state" style="display:none"><p>Chưa có dữ liệu gia hạn nào</p></div>
+  <div style="margin-top:10px;font-size:12px;color:var(--text-muted)" id="gh-table-count"></div>
+</div>
+
+<!-- EDIT MODAL GIA HẠN -->
+<div id="gh-edit-modal" style="display:none">
+  <div class="modal-overlay" onclick="closeGhEditModal(event)">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3>✏️ Sửa yêu cầu gia hạn</h3>
+        <button onclick="closeGhEditModal()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);padding:5px 12px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:700">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="gh-edit-fbid">
+        <div class="edit-form-grid">
+          <div class="form-group">
+            <label>Ngày</label>
+            <input type="date" id="gh-edit-ngay" style="width:100%">
+          </div>
+          <div class="form-group">
+            <label>MST / CCCD</label>
+            <input type="text" id="gh-edit-mst">
+          </div>
+          <div class="form-group">
+            <label>SĐT</label>
+            <input type="text" id="gh-edit-sdt">
+          </div>
+          <div class="form-group">
+            <label>Người liên hệ</label>
+            <input type="text" id="gh-edit-nguoilh">
+          </div>
+          <div class="form-group span2">
+            <label>Dịch vụ</label>
+            <select id="gh-edit-dichvu" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:0 12px;color:var(--text);font-family:inherit;font-size:13px;outline:none;height:36px">
+              <option value="HĐ">HĐ – Hóa đơn điện tử</option>
+              <option value="BHXH">BHXH – Bảo hiểm xã hội</option>
+              <option value="CKS">CKS – Chữ ký số</option>
+              <option value="CKS HSM">CKS HSM</option>
+              <option value="Khác">Khác</option>
+            </select>
+          </div>
+          <div class="form-group span2">
+            <label>Ghi chú</label>
+            <input type="text" id="gh-edit-ghichu">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeGhEditModal()">Hủy</button>
+        <button class="btn btn-primary" onclick="saveGhEdit()">💾 Lưu thay đổi</button>
+      </div>
+    </div>
+  </div>
+</div>  
 <!-- ═══════════════════════════════════ EDIT MODAL ═══════════════════════════════════ -->
 <div id="edit-modal" style="display:none">
   <div class="modal-overlay" onclick="closeEditModal(event)">
@@ -741,7 +917,7 @@ function initFirebase() {
     renderQuickStats();
     renderTable();
   });
-
+  initGiahan();
   window._fb.listenGhichu(map => {
     ghichuMap = map;
     // Nếu đang xem trang thống kê thì cập nhật lại
@@ -858,6 +1034,7 @@ function showPage(id,el){
   if(id==='bang')renderTable();
   if(id==='thongke')renderStats('week');
   if(id==='nhap')renderQuickStats();
+  if(id==='giahan'){initGhDates();renderGiahanTable();renderGhQuickStats();}
 }
 
 // ═══════════════════════════════════════════════
@@ -2642,6 +2819,311 @@ function exportStatExcel(period) {
   XLSX.writeFile(wb, fname);
   toast(`✓ Đã xuất ${fname}`, 'success');
 }
+
+// ═══════════════════════════════════════════════
+// GIA HẠN MODULE
+// ═══════════════════════════════════════════════
+let giahanRecords = [];
+let _ghUnsubscribe = null;
+
+function initGiahan() {
+  if (!window._fb) return;
+  if (_ghUnsubscribe) _ghUnsubscribe();
+  _ghUnsubscribe = window._fb.listenGiahan(recs => {
+    giahanRecords = recs;
+    renderGiahanTable();
+    renderGhQuickStats();
+  });
+}
+
+// Set ngày mặc định khi vào trang
+function initGhDates() {
+  const today = new Date().toISOString().split('T')[0];
+  if (!document.getElementById('gh-ngay').value)
+    document.getElementById('gh-ngay').value = today;
+
+  const mon = getMonday(new Date()).toISOString().split('T')[0];
+  const sun = new Date(getMonday(new Date()));
+  sun.setDate(sun.getDate() + 6);
+  document.getElementById('gh-f-from').value = mon;
+  document.getElementById('gh-f-to').value = sun.toISOString().split('T')[0];
+}
+
+// THÊM BẢN GHI
+async function addGiahan() {
+  const mst    = document.getElementById('gh-mst').value.trim();
+  const dichvu = document.getElementById('gh-dichvu').value;
+  if (!mst)    { toast('Vui lòng nhập MST / CCCD', 'error'); return; }
+  if (!dichvu) { toast('Vui lòng chọn dịch vụ', 'error'); return; }
+
+  const btn = document.getElementById('gh-btn-save');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Đang lưu...';
+
+  const data = {
+    ngay:    document.getElementById('gh-ngay').value,
+    mst,
+    sdt:     document.getElementById('gh-sdt').value.trim(),
+    nguoilh: document.getElementById('gh-nguoilh').value.trim(),
+    dichvu,
+    kyThuat: 'Đông',
+    ghichu:  document.getElementById('gh-ghichu').value.trim(),
+  };
+
+  try {
+    await window._fb.addGiahan(data);
+    const fb = document.getElementById('gh-last-saved');
+    fb.style.display = 'block';
+    fb.innerHTML = `✓ Đã lưu: <strong>${mst}</strong> · ${dichvu}`;
+    setTimeout(() => fb.style.display = 'none', 3500);
+    clearGiahanForm();
+    toast('✓ Đã lưu!', 'success');
+  } catch(e) {
+    toast('❌ Lỗi: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '💾 Lưu gia hạn';
+  }
+}
+
+function clearGiahanForm() {
+  document.getElementById('gh-mst').value = '';
+  document.getElementById('gh-sdt').value = '';
+  document.getElementById('gh-nguoilh').value = '';
+  document.getElementById('gh-dichvu').value = '';
+  document.getElementById('gh-ghichu').value = '';
+  document.getElementById('gh-mst-suggest').style.display = 'none';
+  // Giữ ngày hiện tại
+  document.getElementById('gh-ngay').value = new Date().toISOString().split('T')[0];
+}
+
+// XÓA
+async function deleteGiahan(fbId) {
+  if (!confirm('Xóa bản ghi gia hạn này?')) return;
+  try {
+    await window._fb.deleteGiahan(fbId);
+    toast('Đã xóa', 'success');
+  } catch(e) {
+    toast('❌ Lỗi: ' + e.message, 'error');
+  }
+}
+
+// SỬA
+function openGhEditModal(fbId) {
+  const rec = giahanRecords.find(r => r._fbId === fbId);
+  if (!rec) return;
+  document.getElementById('gh-edit-fbid').value   = fbId;
+  document.getElementById('gh-edit-ngay').value   = rec.ngay || '';
+  document.getElementById('gh-edit-mst').value    = rec.mst || '';
+  document.getElementById('gh-edit-sdt').value    = rec.sdt || '';
+  document.getElementById('gh-edit-nguoilh').value= rec.nguoilh || '';
+  document.getElementById('gh-edit-dichvu').value = rec.dichvu || '';
+  document.getElementById('gh-edit-ghichu').value = rec.ghichu || '';
+  document.getElementById('gh-edit-modal').style.display = 'block';
+}
+
+function closeGhEditModal(e) {
+  if (e && e.target !== document.querySelector('#gh-edit-modal .modal-overlay')) return;
+  document.getElementById('gh-edit-modal').style.display = 'none';
+}
+
+async function saveGhEdit() {
+  const fbId = document.getElementById('gh-edit-fbid').value;
+  const data = {
+    ngay:    document.getElementById('gh-edit-ngay').value,
+    mst:     document.getElementById('gh-edit-mst').value.trim(),
+    sdt:     document.getElementById('gh-edit-sdt').value.trim(),
+    nguoilh: document.getElementById('gh-edit-nguoilh').value.trim(),
+    dichvu:  document.getElementById('gh-edit-dichvu').value,
+    kyThuat: 'Đông',
+    ghichu:  document.getElementById('gh-edit-ghichu').value.trim(),
+  };
+  try {
+    await window._fb.updateGiahan(fbId, data);
+    document.getElementById('gh-edit-modal').style.display = 'none';
+    toast('✓ Đã cập nhật!', 'success');
+  } catch(e) {
+    toast('❌ Lỗi: ' + e.message, 'error');
+  }
+}
+
+// AUTOCOMPLETE MST từ lịch sử giahan + records
+function onGhMstInput(inp) {
+  const val = inp.value.trim();
+  const box = document.getElementById('gh-mst-suggest');
+  if (val.length < 3) { box.style.display = 'none'; return; }
+
+  const seen = new Map();
+  // Tìm trong giahanRecords trước
+  giahanRecords.forEach(r => {
+    if (r.mst && r.mst.includes(val) && !seen.has(r.mst))
+      seen.set(r.mst, { mst: r.mst, sdt: r.sdt, nguoilh: r.nguoilh, dichvu: r.dichvu });
+  });
+  // Tìm thêm từ records cũ
+  records.forEach(r => {
+    if (r.mst && r.mst.includes(val) && !seen.has(r.mst))
+      seen.set(r.mst, { mst: r.mst, sdt: r.sdt, nguoilh: '', dichvu: '' });
+  });
+
+  const matches = [...seen.values()].slice(0, 6);
+  if (!matches.length) { box.style.display = 'none'; return; }
+
+  box.innerHTML = matches.map((m, i) => `
+    <div style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--surface3);font-size:13px"
+      onmousedown="ghPickMst('${(m.mst||'').replace(/'/g,"&#39;")}','${(m.sdt||'').replace(/'/g,"&#39;")}','${(m.nguoilh||'').replace(/'/g,"&#39;")}','${(m.dichvu||'').replace(/'/g,"&#39;")}')"
+      onmouseenter="this.style.background='var(--accent-glow)'" onmouseleave="this.style.background=''">
+      <span style="font-family:'JetBrains Mono',monospace;color:var(--accent-light)">${m.mst}</span>
+      ${m.sdt?`<span style="color:var(--text-muted);margin-left:8px;font-size:12px">${m.sdt}</span>`:''}
+    </div>`).join('');
+  box.style.display = 'block';
+  box.style.width = Math.max(300, inp.offsetWidth) + 'px';
+}
+
+function ghPickMst(mst, sdt, nguoilh, dichvu) {
+  document.getElementById('gh-mst').value = mst;
+  if (sdt)     document.getElementById('gh-sdt').value = sdt;
+  if (nguoilh) document.getElementById('gh-nguoilh').value = nguoilh;
+  if (dichvu)  document.getElementById('gh-dichvu').value = dichvu;
+  document.getElementById('gh-mst-suggest').style.display = 'none';
+}
+
+// RENDER TABLE
+const GH_DV_COLOR = {
+  'HĐ':'badge-hd','BHXH':'badge-bhxh','CKS':'badge-cks','CKS HSM':'badge-cks','Khác':'badge-khac'
+};
+
+function getGhFiltered() {
+  const from   = document.getElementById('gh-f-from').value;
+  const to     = document.getElementById('gh-f-to').value;
+  const dv     = document.getElementById('gh-f-dv').value;
+  const search = document.getElementById('gh-f-search').value.toLowerCase();
+  return giahanRecords.filter(r => {
+    if (from && r.ngay < from) return false;
+    if (to   && r.ngay > to)   return false;
+    if (dv   && r.dichvu !== dv) return false;
+    if (search && !(
+      (r.mst||'').includes(search) ||
+      (r.sdt||'').includes(search) ||
+      (r.nguoilh||'').toLowerCase().includes(search) ||
+      (r.ghichu||'').toLowerCase().includes(search)
+    )) return false;
+    return true;
+  });
+}
+
+function renderGiahanTable() {
+  const data  = getGhFiltered();
+  const tbody = document.getElementById('gh-table-body');
+  const empty = document.getElementById('gh-table-empty');
+  const count = document.getElementById('gh-table-count');
+
+  if (!data.length) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    count.textContent = '';
+    return;
+  }
+  empty.style.display = 'none';
+  count.textContent = `${data.length} bản ghi`;
+
+  let stt = 1;
+  tbody.innerHTML = data.map(r => {
+    const ngayHien = r.ngay ? r.ngay.split('-').reverse().join('/') : '—';
+    const badgeClass = GH_DV_COLOR[r.dichvu] || 'badge-khac';
+    return `<tr>
+      <td style="color:var(--text-dim);text-align:center">${stt++}</td>
+      <td class="mono" style="white-space:nowrap">${ngayHien}</td>
+      <td class="mono">${r.mst || '—'}</td>
+      <td class="mono">${r.sdt || '—'}</td>
+      <td>${r.nguoilh || '—'}</td>
+      <td><span class="badge ${badgeClass}">${r.dichvu || '—'}</span></td>
+      <td style="color:var(--accent-light);font-weight:700">${r.kyThuat || 'Đông'}</td>
+      <td style="color:var(--text-muted);max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${(r.ghichu||'').replace(/"/g,'&quot;')}">${r.ghichu || '—'}</td>
+      <td><button class="btn btn-warning btn-sm" onclick="openGhEditModal('${r._fbId}')">✏️</button></td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteGiahan('${r._fbId}')">Xóa</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// QUICK STATS
+function renderGhQuickStats() {
+  const today = new Date().toISOString().split('T')[0];
+  const mon   = getMonday(new Date()).toISOString().split('T')[0];
+  const month = today.slice(0, 7);
+
+  const todayR = giahanRecords.filter(r => r.ngay === today);
+  const weekR  = giahanRecords.filter(r => r.ngay >= mon && r.ngay <= today);
+  const monthR = giahanRecords.filter(r => r.ngay && r.ngay.startsWith(month));
+
+  const rows = [
+    { label: 'Hôm nay',    val: todayR.length, c: 'var(--c-hd)' },
+    { label: 'Tuần này',   val: weekR.length,  c: 'var(--c-bhxh)' },
+    { label: 'Tháng này',  val: monthR.length, c: 'var(--c-cks)' },
+    { label: 'Tổng cộng',  val: giahanRecords.length, c: 'var(--orange)' },
+  ];
+  document.getElementById('gh-quick-stats').innerHTML = rows.map(r => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--surface2)">
+      <span style="font-size:12px;color:var(--text-muted)">${r.label}</span>
+      <span style="font-size:22px;font-weight:800;font-family:'JetBrains Mono',monospace;color:${r.c}">${r.val}</span>
+    </div>`).join('');
+}
+
+function ghClearFilters() {
+  document.getElementById('gh-f-from').value = '';
+  document.getElementById('gh-f-to').value = '';
+  document.getElementById('gh-f-dv').value = '';
+  document.getElementById('gh-f-search').value = '';
+  renderGiahanTable();
+}
+
+// XUẤT EXCEL
+function exportGiahanExcel() {
+  if (typeof XLSX === 'undefined') { toast('Thư viện XLSX chưa tải', 'error'); return; }
+  const data = getGhFiltered();
+  if (!data.length) { toast('Không có dữ liệu', 'error'); return; }
+  const today = new Date();
+  const ngayXuat = `${today.getDate()}/${String(today.getMonth()+1).padStart(2,'0')}/${today.getFullYear()}`;
+
+  const rows = [
+    ['YÊU CẦU GIA HẠN – Kỹ thuật Đông'],
+    [`Xuất ngày: ${ngayXuat}  |  Tổng: ${data.length} bản ghi`],
+    [],
+    ['STT','Ngày','MST / CCCD','SĐT','Người LH','Dịch vụ','Kỹ thuật','Ghi chú'],
+    ...data.map((r, i) => [
+      i+1,
+      r.ngay ? r.ngay.split('-').reverse().join('/') : '',
+      r.mst || '',
+      r.sdt || '',
+      r.nguoilh || '',
+      r.dichvu || '',
+      r.kyThuat || 'Đông',
+      r.ghichu || '',
+    ])
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:6},{wch:12},{wch:18},{wch:14},{wch:16},{wch:12},{wch:10},{wch:30}];
+  ws['!merges'] = [{s:{r:0,c:0},e:{r:0,c:7}},{s:{r:1,c:0},e:{r:1,c:7}}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Gia Hạn');
+  XLSX.writeFile(wb, `GiaHan_Dong_${today.toISOString().split('T')[0]}.xlsx`);
+  toast('✓ Đã xuất Excel!', 'success');
+}
+
+// COPY EXCEL
+function copyGiahanTable() {
+  const data = getGhFiltered();
+  if (!data.length) { toast('Không có dữ liệu', 'error'); return; }
+  const header = ['STT','Ngày','MST/CCCD','SĐT','Người LH','Dịch vụ','Kỹ thuật','Ghi chú'].join('\t');
+  const rows = data.map((r, i) => [
+    i+1,
+    r.ngay ? r.ngay.split('-').reverse().join('/') : '',
+    r.mst || '', r.sdt || '', r.nguoilh || '',
+    r.dichvu || '', r.kyThuat || 'Đông', r.ghichu || ''
+  ].join('\t'));
+  navigator.clipboard.writeText([header, ...rows].join('\n'))
+    .then(() => toast('✓ Đã copy! Dán vào Excel bằng Ctrl+V', 'success'));
+}      
 // ═══════════════════════════════════════════════
 // TOAST
 // ═══════════════════════════════════════════════
