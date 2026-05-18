@@ -758,6 +758,7 @@ textarea { line-height: 1.6; }
           <th>Dịch vụ</th>
           <th>Kỹ thuật</th>
           <th>Ghi chú</th>
+          <th style="width:50px">Copy</th>
           <th style="width:56px">Sửa</th>
           <th style="width:56px">Xóa</th>
         </tr>
@@ -3039,6 +3040,7 @@ function renderGiahanTable() {
       <td><span class="badge ${badgeClass}">${r.dichvu || '—'}</span></td>
       <td style="color:var(--accent-light);font-weight:700">${r.kyThuat || 'Đông'}</td>
       <td style="color:var(--text-muted);max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${(r.ghichu||'').replace(/"/g,'&quot;')}">${r.ghichu || '—'}</td>
+      <td><button class="btn btn-ghost btn-sm" style="padding:4px 8px;font-size:11px" onclick="copyGhRow('${(r.mst||'').replace(/'/g,"&#39;")}','${(r.sdt||'').replace(/'/g,"&#39;")}','${(r.nguoilh||'').replace(/'/g,"&#39;")}','${(r.dichvu||'').replace(/'/g,"&#39;")}','${(r.ghichu||'').replace(/'/g,"&#39;")}')">📋</button></td>
       <td><button class="btn btn-warning btn-sm" onclick="openGhEditModal('${r._fbId}')">✏️</button></td>
       <td><button class="btn btn-danger btn-sm" onclick="deleteGiahan('${r._fbId}')">Xóa</button></td>
     </tr>`;
@@ -3114,16 +3116,27 @@ function exportGiahanExcel() {
 function copyGiahanTable() {
   const data = getGhFiltered();
   if (!data.length) { toast('Không có dữ liệu', 'error'); return; }
-  const header = ['STT','Ngày','MST/CCCD','SĐT','Người LH','Dịch vụ','Kỹ thuật','Ghi chú'].join('\t');
   const rows = data.map((r, i) => [
     i+1,
     r.ngay ? r.ngay.split('-').reverse().join('/') : '',
     r.mst || '', r.sdt || '', r.nguoilh || '',
     r.dichvu || '', r.kyThuat || 'Đông', r.ghichu || ''
   ].join('\t'));
-  navigator.clipboard.writeText([header, ...rows].join('\n'))
+  navigator.clipboard.writeText(rows.join('\n'))
     .then(() => toast('✓ Đã copy! Dán vào Excel bằng Ctrl+V', 'success'));
-}      
+}  
+  function copyGhRow(mst, sdt, nguoilh, dichvu, ghichu) {
+  const text = [mst||'', sdt||'', nguoilh||'', dichvu||'', 'Đông', ghichu||''].join('\t');
+  navigator.clipboard.writeText(text)
+    .then(() => toast('✓ Đã copy dòng!', 'success'))
+    .catch(() => {
+      const ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta);
+      ta.select(); document.execCommand('copy');
+      document.body.removeChild(ta);
+      toast('✓ Đã copy dòng!', 'success');
+    });
+}
 // ═══════════════════════════════════════════════
 // TOAST
 // ═══════════════════════════════════════════════
