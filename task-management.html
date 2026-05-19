@@ -838,6 +838,23 @@ th {
     <div class="card-title">📌 Khách hàng có ghi chú</div>
     <div id="ghichu-list"></div>
   </div>
+  <!-- THỐNG KÊ GIA HẠN -->
+<div class="card" style="margin-bottom:16px">
+  <div class="card-title">🔄 Thống kê Gia hạn</div>
+  <div id="giahan-stat-section">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px" id="gh-stat-cards"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Theo dịch vụ</div>
+        <div id="gh-stat-by-dv"></div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Theo ngày</div>
+        <div id="gh-stat-by-day"></div>
+      </div>
+    </div>
+  </div>
+</div>
   <div class="card" style="margin-bottom:16px">
   <div class="card-title">📆 Xu hướng theo tuần (trong tháng hiện tại)</div>
   <div id="weekly-trend"></div>
@@ -1334,7 +1351,7 @@ function showPage(id,el){
   document.getElementById('page-'+id).classList.add('active');
   if(el)el.classList.add('active');
   if(id==='bang')renderTable();
-  if(id==='thongke')renderStats('week');
+  if(id==='thongke'){renderStats('week');renderGiahanStats('week');}
   if(id==='nhap')renderQuickStats();
   if(id==='giahan'){initGhDates();renderGiahanTable();renderGhQuickStats();}
 }
@@ -2040,7 +2057,7 @@ function copyTableToClipboard(){
 // STATS
 // ═══════════════════════════════════════════════
 let statPeriod='week';
-function setStatPeriod(p,el){statPeriod=p;document.querySelectorAll('.period-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderStats(p);}
+function setStatPeriod(p,el){statPeriod=p;document.querySelectorAll('.period-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderStats(p);renderGiahanStats(p);}
 
 function getStatData(period){
   const today=new Date().toISOString().split('T')[0];
@@ -2471,7 +2488,124 @@ function renderStats(period){
       </table>
     </div>`;
 }
+// ═══════════════════════════════════════════════
+// THỐNG KÊ GIA HẠN
+// ═══════════════════════════════════════════════
+function renderGiahanStats(period) {
+  const today = new Date().toISOString().split('T')[0];
+  const mon   = getMonday(new Date()).toISOString().split('T')[0];
+  const month = today.slice(0, 7);
+  const lastMonDate = new Date(getMonday(new Date()));
+  lastMonDate.setDate(lastMonDate.getDate() - 7);
+  const lastMon = lastMonDate.toISOString().split('T')[0];
+  const lastSun = new Date(lastMonDate);
+  lastSun.setDate(lastSun.getDate() + 6);
+  const lastSunStr = lastSun.toISOString().split('T')[0];
 
+  const data = giahanRecords.filter(r => {
+    if (period === 'day')      return r.ngay === today;
+    if (period === 'week')     return r.ngay >= mon && r.ngay <= today;
+    if (period === 'lastweek') return r.ngay >= lastMon && r.ngay <= lastSunStr;
+    if (period === 'month')    return r.ngay && r.ngay.startsWith(month);
+    return true;
+  });
+
+  const total = data.length;
+  const dvCnt = {};
+  data.forEach(r => { dvCnt[r.dichvu] = (dvCnt[r.dichvu] || 0) + 1; });
+
+  const dvList2   = ['HĐ','BHXH','CKS','CKS HSM','Khác'];
+  const dvColors2 = {
+    'HĐ':'var(--c-hd)', 'BHXH':'var(--c-bhxh)',
+    'CKS':'var(--c-cks)', 'CKS HSM':'var(--purple)', 'Khác':'var(--text-muted)'
+  };
+  const dvBadge2  = {
+    'HĐ':'badge-hd','BHXH':'badge-bhxh',
+    'CKS':'badge-cks','CKS HSM':'badge-cks','Khác':'badge-khac'
+  };
+
+  // ── Stat cards ──
+  const cardsEl = document.getElementById('gh-stat-cards');
+  if (cardsEl) {
+    cardsEl.innerHTML = `
+      <div class="stat-card" style="--c:var(--orange)">
+        <div class="stat-value">${total}</div>
+        <div class="stat-label">Tổng gia hạn</div>
+      </div>
+      ${dvList2.filter(d => dvCnt[d]).map(d => `
+        <div class="stat-card" style="--c:${dvColors2[d]}">
+          <div class="stat-value">${dvCnt[d]}</div>
+          <div class="stat-label">${d}</div>
+          <div class="stat-sub">${total ? Math.round(dvCnt[d]/total*100) : 0}%</div>
+        </div>`).join('')}`;
+  }
+
+  // ── Theo dịch vụ ──
+  const dvEl = document.getElementById('gh-stat-by-dv');
+  if (dvEl) {
+    if (!total) {
+      dvEl.innerHTML = '<p style="color:var(--text-dim);font-size:12px">Không có dữ liệu</p>';
+    } else {
+      dvEl.innerHTML = `
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <tr>
+            <th style="text-align:left;padding:4px 8px;color:var(--text-muted);font-size:11px;font-weight:700">Dịch vụ</th>
+            <th style="text-align:right;padding:4px 8px;color:var(--text-muted);font-size:11px;font-weight:700">SL</th>
+            <th style="text-align:right;padding:4px 8px;color:var(--text-muted);font-size:11px;font-weight:700">%</th>
+          </tr>
+          ${dvList2.filter(d => dvCnt[d]).map(d => {
+            const cnt = dvCnt[d]; const pct = Math.round(cnt/total*100);
+            return `<tr>
+              <td style="padding:5px 8px;border-bottom:1px solid var(--surface2)">
+                <span class="badge ${dvBadge2[d]}">${d}</span>
+              </td>
+              <td style="padding:5px 8px;text-align:right;font-weight:700;font-family:'JetBrains Mono',monospace;border-bottom:1px solid var(--surface2)">${cnt}</td>
+              <td style="padding:5px 8px;border-bottom:1px solid var(--surface2)">
+                <div style="display:flex;align-items:center;gap:5px;justify-content:flex-end">
+                  <div style="background:var(--surface3);border-radius:3px;height:5px;width:50px">
+                    <div style="height:5px;border-radius:3px;background:${dvColors2[d]};width:${pct}%"></div>
+                  </div>
+                  <span style="color:var(--text-muted);font-size:10px;min-width:26px">${pct}%</span>
+                </div>
+              </td>
+            </tr>`;
+          }).join('')}
+          <tr>
+            <td style="padding:5px 8px;font-weight:700">Tổng</td>
+            <td style="padding:5px 8px;text-align:right;font-weight:800;font-family:'JetBrains Mono',monospace">${total}</td>
+            <td></td>
+          </tr>
+        </table>`;
+    }
+  }
+
+  // ── Theo ngày ──
+  const dayEl = document.getElementById('gh-stat-by-day');
+  if (dayEl) {
+    const dayCnt = {};
+    data.forEach(r => { dayCnt[r.ngay] = (dayCnt[r.ngay] || 0) + 1; });
+    const days = Object.keys(dayCnt).sort();
+    if (!days.length) {
+      dayEl.innerHTML = '<p style="color:var(--text-dim);font-size:12px">Không có dữ liệu</p>';
+    } else {
+      const maxD = Math.max(...days.map(d => dayCnt[d]), 1);
+      const thu7 = ['CN','T2','T3','T4','T5','T6','T7'];
+      dayEl.innerHTML = days.map(d => {
+        const [,mm,dd] = d.split('-');
+        const pct = Math.round(dayCnt[d]/maxD*100);
+        return `
+          <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--surface2)">
+            <span style="font-size:11px;font-family:'JetBrains Mono',monospace;min-width:38px">${dd}/${mm}</span>
+            <span style="font-size:10px;color:var(--text-dim);min-width:18px">${thu7[new Date(d).getDay()]}</span>
+            <div style="flex:1;background:var(--surface3);border-radius:3px;height:6px">
+              <div style="height:6px;border-radius:3px;background:var(--orange);width:${pct}%"></div>
+            </div>
+            <span style="font-size:12px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--orange);min-width:20px;text-align:right">${dayCnt[d]}</span>
+          </div>`;
+      }).join('');
+    }
+  }
+}
 // ═══════════════════════════════════════════════
 // REPORT
 // ═══════════════════════════════════════════════
@@ -3523,7 +3657,13 @@ function buildStatsFromFirebase() {
 
   const data = records.filter(r => r.ngay >= fromStr && r.ngay <= toStr);
   if (!data.length) return null;
-  return buildStatsPayload(data, labelPeriod, fromStr, toStr);
+  const result = buildStatsPayload(data, labelPeriod, fromStr, toStr);
+  const ghInPeriod = giahanRecords.filter(r => r.ngay >= fromStr && r.ngay <= toStr);
+  const ghDvCnt = {};
+  ghInPeriod.forEach(r => { ghDvCnt[r.dichvu] = (ghDvCnt[r.dichvu]||0)+1; });
+  result.ghTotal = ghInPeriod.length;
+  result.ghDvCnt = ghDvCnt;
+  return result;
 }
 
 // ── ĐỌC EXCEL ──
@@ -3797,6 +3937,7 @@ function renderReportPreview(rd) {
       <li>Kỳ báo cáo: <strong class="rpt-highlight">${payload.labelPeriod}</strong></li>
       <li>Số ngày làm việc có dữ liệu: <strong>${payload.numDays} ngày</strong></li>
       <li>So với kỳ trước: <strong>${payload.delta||'N/A'}</strong></li>
+      <li>Yêu cầu gia hạn tiếp nhận: <strong style="color:var(--orange)">${payload.ghTotal||0} yêu cầu</strong>${payload.ghDvCnt&&Object.keys(payload.ghDvCnt).length?' — '+Object.entries(payload.ghDvCnt).map(([k,v])=>k+': '+v).join(', '):''}</li>
     </ul>
 
     <h3>II. THỐNG KÊ TỔNG HỢP</h3>
@@ -3935,6 +4076,7 @@ async function exportReportDocx() {
         mkBullet(`Hóa đơn điện tử: ${payload.dvCnt.HD} ca (${payload.total?Math.round(payload.dvCnt.HD/payload.total*100):0}%)`),
         mkBullet(`Chữ ký số: ${payload.dvCnt.CKS} ca (${payload.total?Math.round(payload.dvCnt.CKS/payload.total*100):0}%)`),
         mkBullet(`Giờ cao điểm: ${payload.peakHour.gio} (${payload.peakHour.total} ca)`),
+        mkBullet(`Tổng yêu cầu gia hạn: ${payload.ghTotal||0} yêu cầu${payload.ghDvCnt&&Object.keys(payload.ghDvCnt).length?' ('+Object.entries(payload.ghDvCnt).map(([k,v])=>k+': '+v).join(', ')+')':''}`),
         new Paragraph({spacing:{before:120}}),
         new Table({width:{size:9000,type:WidthType.DXA},columnWidths:[1400,800,1200,1200,1200,1200,1600],rows:[dayHeader,...dayBodyRows,dayTotalRow]}),
         new Paragraph({spacing:{before:160}}),
